@@ -24,26 +24,26 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody id="checklistBody">
-            <!-- Checklist items will be dynamically added here -->
-        </tbody>
+        <tbody id="checklistBody"></tbody>
     </table>
     
     <button onclick="addChecklistItem()">Add Item</button>
 
     <script>
-        const API_KEY = "ATTA8478b90efb053a8b1f760e97c384590752c902487ae5a914c46f278171836a9714C75BC8"
-
+        const API_KEY = "YOUR_TRELLO_API_KEY"; // Use your Trello API Key
         var t = TrelloPowerUp.iframe();
-        var listIds = {}; // Store list IDs dynamically
-        var membersList = {}; // Store Trello member IDs
+        var listIds = {};
+        var membersList = {};
 
         function fetchBoardData() {
             return t.board("id").then(function (board) {
+                console.log("Board ID:", board.id);
+                
                 return Promise.all([
                     fetch(`https://api.trello.com/1/boards/${board.id}/lists?fields=id,name&key=${API_KEY}`)
                         .then(response => response.json())
                         .then(lists => {
+                            console.log("Lists fetched:", lists);
                             lists.forEach(list => {
                                 if (list.name === "PROJECT | Upcoming") listIds.upcoming = list.id;
                                 if (list.name === "PROJECT | In-Progress") listIds.inProgress = list.id;
@@ -121,7 +121,7 @@
                     .then(function (card) {
                         button.textContent = "Edit Card";
                         button.onclick = function () { editTrelloCard(card.id, row); };
-                        row.dataset.cardId = card.id; // Store card ID for syncing
+                        row.dataset.cardId = card.id;
                     })
                     .catch(error => console.error("Error creating Trello card:", error));
             });
