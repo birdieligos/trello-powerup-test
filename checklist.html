@@ -24,33 +24,33 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody id="checklistBody"></tbody>
+        <tbody id="checklistBody">
+        </tbody>
     </table>
     
     <button onclick="addChecklistItem()">Add Item</button>
 
     <script>
-        const API_KEY = "YOUR_TRELLO_API_KEY"; // Use your Trello API Key
+        const API_KEY = "7443867af11d32c3e8f8152b114201fd"; 
+        const API_TOKEN = "ae53988077e16ae1a2d07602b5ff53b987f22d7a6348b7ef913c863ff79aa189"; 
+
         var t = TrelloPowerUp.iframe();
-        var listIds = {};
-        var membersList = {};
+        var listIds = {}; 
+        var membersList = {}; 
 
         function fetchBoardData() {
             return t.board("id").then(function (board) {
-                console.log("Board ID:", board.id);
-                
                 return Promise.all([
-                    fetch(`https://api.trello.com/1/boards/${board.id}/lists?fields=id,name&key=${API_KEY}`)
+                    fetch(`https://api.trello.com/1/boards/${board.id}/lists?fields=id,name&key=${API_KEY}&token=${API_TOKEN}`)
                         .then(response => response.json())
                         .then(lists => {
-                            console.log("Lists fetched:", lists);
                             lists.forEach(list => {
                                 if (list.name === "PROJECT | Upcoming") listIds.upcoming = list.id;
                                 if (list.name === "PROJECT | In-Progress") listIds.inProgress = list.id;
                             });
                         }),
 
-                    fetch(`https://api.trello.com/1/boards/${board.id}/members?key=${API_KEY}`)
+                    fetch(`https://api.trello.com/1/boards/${board.id}/members?key=${API_KEY}&token=${API_TOKEN}`)
                         .then(response => response.json())
                         .then(members => {
                             members.forEach(member => {
@@ -104,7 +104,7 @@
 
                 t.card("labels")
                     .then(function (card) {
-                        return fetch(`https://api.trello.com/1/cards?key=${API_KEY}`, {
+                        return fetch(`https://api.trello.com/1/cards?key=${API_KEY}&token=${API_TOKEN}`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
@@ -121,7 +121,7 @@
                     .then(function (card) {
                         button.textContent = "Edit Card";
                         button.onclick = function () { editTrelloCard(card.id, row); };
-                        row.dataset.cardId = card.id;
+                        row.dataset.cardId = card.id; 
                     })
                     .catch(error => console.error("Error creating Trello card:", error));
             });
@@ -132,7 +132,7 @@
             var dueDate = row.cells[1].querySelector('input').value;
             var selectedMembers = Array.from(row.cells[2].querySelector('select').selectedOptions).map(opt => opt.value);
 
-            fetch(`https://api.trello.com/1/cards/${cardId}?key=${API_KEY}`, {
+            fetch(`https://api.trello.com/1/cards/${cardId}?key=${API_KEY}&token=${API_TOKEN}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -146,11 +146,11 @@
         function syncChecklistWithTrello() {
             fetchBoardData().then(() => {
                 t.card("id").then(function (card) {
-                    return fetch(`https://api.trello.com/1/cards/${card.id}/checklists?key=${API_KEY}`)
+                    return fetch(`https://api.trello.com/1/cards/${card.id}/checklists?key=${API_KEY}&token=${API_TOKEN}`)
                         .then(response => response.json())
                         .then(checklists => {
                             checklists.forEach(checklist => {
-                                fetch(`https://api.trello.com/1/checklists/${checklist.id}/checkItems?key=${API_KEY}`)
+                                fetch(`https://api.trello.com/1/checklists/${checklist.id}/checkItems?key=${API_KEY}&token=${API_TOKEN}`)
                                     .then(response => response.json())
                                     .then(items => {
                                         items.forEach(item => {
