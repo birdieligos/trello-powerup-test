@@ -1,9 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Trello Power-Up</title>
+    <title>SLS Pulse Power-Up</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
     <h1>Trello Power-Up Loaded</h1>
+
+    <script>
+        TrelloPowerUp.initialize({
+            "card-back-section": function (t, options) {
+                return {
+                    title: "Custom Checklist",
+                    content: {
+                        type: "iframe",
+                        url: t.signUrl("https://birdieligos.github.io/trello-powerup-test/checklist.html")
+                    }
+                };
+            }
+        });
+
+        console.log("Trello Power-Up Initialized");
+    </script>
 </body>
 </html>
