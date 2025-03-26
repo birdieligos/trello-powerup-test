@@ -1,14 +1,15 @@
 {
   "name": "Task Card & Mirroring Power-Up",
-  "description": "Creates task cards from checklist items and mirrors updates.",
+  "description": "Creates task checklists on cards and manages user-specific authorization.",
   "connectors": {
     "iframe": {
       "url": "https://birdieligos.github.io/trello-powerup-test/index.html"
     }
   },
   "capabilities": [
-    "checklist-buttons",
-    "card-badges",
+    "authorization-status",
+    "show-authorization",
+    "card-buttons",
     "card-detail-badges"
   ],
   "icon": {
