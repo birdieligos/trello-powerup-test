@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Create Task Card</title>
+  <!-- Include the Trello Power-Up client library -->
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+  <h3>Create Task Card</h3>
+  <form id="create-task-form">
+    <div>
+      <label for="task-name">Name:</label>
+      <input type="text" id="task-name" name="task-name" required>
+    </div>
+    <div>
+      <label for="due-date">Due Date:</label>
+      <input type="datetime-local" id="due-date" name="due-date" required>
+    </div>
+    <div>
+      <label for="members">Members (comma separated member IDs):</label>
+      <input type="text" id="members" name="members">
+    </div>
+    <div>
+      <button type="submit">Create Task Card</button>
+    </div>
+  </form>
+
+  <script>
+    const t = TrelloPowerUp.iframe();
+
+    // Trello API credentials
+    const TRELLO_API_KEY = "7443867af11d32c3e8f8152b114201fd";
+    const TRELLO_TOKEN   = "ae53988077e16ae1a2d07602b5ff53b987f22d7a6348b7ef913c863ff79aa189";
+    
+    // Default list name for new task cards
+    const DEFAULT_LIST_NAME = "TASK | On the Horizon";
+
+    // Function to get the default list ID based on the board ID and DEFAULT_LIST_NAME
+    function getDefaultListId(boardId) {
+      const url = `https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}`;
+      return fetch(url)
+        .then(response => response.json())
+        .then(lists => {
+          const defaultList = lists.find(list => list.name === DEFAULT_LIST_NAME);
+          if (defaultList) {
+            return defaultList.id;
+          } else {
+            throw new Error("Default list '" + DEFAULT_LIST_NAME + "' not found on the board.");
+          }
+        });
+    }
+
+    document.getElementById('create-task-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const taskName = document.getElementById('task-name').value;
+      const dueDateInput = document.getElementById('due-date').value;
+      const dueDate = new Date(dueDateInput).toISOString();
+      const membersInput = document.getElementById('members').value;
+      const members = membersInput.split(',').map(m => m.trim()).filter(m => m.length > 0);
+      
+      // Get the board ID from the current card context
+      t.card('idBoard')
+        .then(function(card) {
+          const boardId = card.idBoard;
+          return getDefaultListId(boardId);
+        })
+        .then(function(defaultListId) {
+          // Build parameters to create the new card
+          const params = new URLSearchParams();
+          params.append("name", taskName);
+          params.append("due", dueDate);
+          params.append("idList", defaultListId);
+          if(members.length > 0) {
+            params.append("idMembers", members.join(','));
+          }
+          params.append("key", TRELLO_API_KEY);
+          params.append("token", TRELLO_TOKEN);
+          
+          return fetch(`https://api.trello.com/1/cards?${params.toString()}`, {
+            method: 'POST'
+          });
+        })
+        .then(response => response.json())
+        .then(card => {
+          // Save the new card's ID and mirror data in the checklist item shared storage.
+          t.set('checklistItem', 'shared', 'taskCardId', card.id)
+            .then(() => {
+              return t.set('checklistItem', 'shared', 'mirroredData', {
+                name: card.name,
+                due: card.due,
+                idMembers: card.idMembers
+              });
+            })
+            .then(() => {
+              t.closePopup();
+            });
+        })
+        .catch(err => {
+          console.error("Error creating card:", err);
+        });
+    });
+  </script>
+</body>
+</html>
