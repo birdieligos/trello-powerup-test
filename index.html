@@ -78,9 +78,9 @@
         });
     }
 
-    // Initialize the Power-Up with the required capabilities plus dummy implementations for unused ones.
+    // Initialize the Power-Up with the capabilities your code implements.
     TrelloPowerUp.initialize({
-      // Implemented capabilities:
+      // The checklist-buttons capability adds a button to each checklist item.
       'checklist-buttons': function(t, options) {
         return [{
           text: 'Task Card',
@@ -141,21 +141,16 @@
           });
       },
 
+      // The onRender callback triggers when your iframe is loaded.
       'onRender': function(t) {
         syncChecklistToCard(t);
         return t.render();
       },
 
-      // Dummy implementations for unused capabilities to prevent unsupported command errors.
-      'board-buttons': function(t, options) {
-        return [];
-      },
-      'card-buttons': function(t, options) {
-        return [];
-      },
-      'card-back-section': function(t, options) {
-        return [];
-      }
+      // Dummy implementations for unused capabilities to suppress errors.
+      'board-buttons': function(t, options) { return []; },
+      'card-buttons': function(t, options) { return []; },
+      'card-back-section': function(t, options) { return []; }
     });
   </script>
 </body>
