@@ -2,34 +2,41 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Authorize Power-Up</title>
+  <title>Authorize Power-Up (Custom OAuth)</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
-  <h3>Authorizing...</h3>
   <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("Starting authorization flow...");
+    document.addEventListener('DOMContentLoaded', function() {
+      const t = TrelloPowerUp.iframe();
+      console.log("Launching full custom OAuth flow with Trello...");
 
-      var t = TrelloPowerUp.iframe();
+      // 1) Build the Trello OAuth URL
+      // Adjust scope, expiration, name, and callback_method if needed
+      // 'return_url' must point to a page you control, e.g. callback.html
+      const trelloAuthUrl =
+        "https://trello.com/1/authorize?" +
+        "expiration=never" +
+        "&scope=read,write" +
+        "&response_type=token" + 
+        "&callback_method=fragment" +
+        "&return_url=" + encodeURIComponent("https://birdieligos.github.io/trello-powerup-test/callback.html") +
+        "&key=YOUR_API_KEY" +
+        "&name=" + encodeURIComponent("Task Checklist Power-Up");
 
-      // Remove 'account' if you don't need the user’s email or advanced access.
-      // If your key is tied to your Power-Up, you usually don't need 'author' either.
-      t.authorize({
-        type: 'popup',
-        scope: { read: true, write: true }, // <-- No account here
-        expiration: 'never'
+      // 2) Use t.authorize with the full URL. 
+      // This opens the standard Trello auth page you showed in your screenshot.
+      t.authorize(trelloAuthUrl, {
+        height: 600,
+        width: 800
       })
       .then(function(token) {
-        console.log("Authorization successful. Retrieved token:", token);
-        // Store the token in the user's private storage.
-        return t.set('member', 'private', 'trello_token', token)
-          .then(function() {
-            console.log("Token stored in member private storage.");
-          });
+        console.log("Retrieved token:", token);
+        // Store the token in member private storage
+        return t.set('member', 'private', 'trello_token', token);
       })
       .then(function() {
-        console.log("Closing authorization popup...");
+        console.log("Token stored. Closing popup...");
         t.closePopup();
       })
       .catch(function(err) {
