@@ -10,7 +10,8 @@
     "authorization-status",
     "show-authorization",
     "card-buttons",
-    "card-detail-badges"
+    "card-detail-badges",
+    "card-badges"
   ],
   "icon": {
     "url": "https://birdieligos.github.io/trello-powerup-test/icon.jpeg"
