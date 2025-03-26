@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Trello OAuth Callback</title>
+</head>
+<body>
+  <script>
+    // The token is appended to the URL fragment (#token=XYZ)
+    const token = window.location.hash.replace(/^#token=/, "");
+    console.log("Trello returned token:", token);
+
+    try {
+      // Attempt to call the popup's authorize handler
+      if (window.opener && typeof window.opener.authorize === "function") {
+        window.opener.authorize(token);
+      } else {
+        // As a fallback, store it in localStorage
+        localStorage.setItem("trello_temp_token", token);
+      }
+    } catch (err) {
+      console.warn("Could not call opener.authorize(token). Using fallback.");
+      localStorage.setItem("trello_temp_token", token);
+    }
+
+    // Close after a short delay
+    setTimeout(() => window.close(), 750);
+  </script>
+</body>
+</html>
