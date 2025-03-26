@@ -1,26 +1,153 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SLS Pulse Power-Up</title>
-    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <meta charset="utf-8">
+  <title>Trello Power-Up: Task Card & Mirroring</title>
+  <!-- Include the Trello Power-Up client library -->
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script>
+    // Trello API credentials (for demonstration only; exposing your secret is not secure for production)
+    const TRELLO_API_KEY = "7443867af11d32c3e8f8152b114201fd";
+    const TRELLO_TOKEN   = "ae53988077e16ae1a2d07602b5ff53b987f22d7a6348b7ef913c863ff79aa189";
+
+    // Helper function to fetch card details (only mirrored fields: name, due, and idMembers)
+    function fetchCardDetails(taskCardId) {
+      return fetch(`https://api.trello.com/1/cards/${taskCardId}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}&fields=name,due,idMembers`)
+        .then(response => response.json());
+    }
+
+    // Function to update a card with new data from the checklist mirror
+    function updateCard(taskCardId, updatedData) {
+      const params = new URLSearchParams();
+      if (updatedData.name) params.append("name", updatedData.name);
+      if (updatedData.due) params.append("due", updatedData.due);
+      if (updatedData.idMembers) params.append("idMembers", updatedData.idMembers.join(','));
+      params.append("key", TRELLO_API_KEY);
+      params.append("token", TRELLO_TOKEN);
+      
+      return fetch(`https://api.trello.com/1/cards/${taskCardId}?${params.toString()}`, {
+        method: 'PUT'
+      }).then(response => response.json());
+    }
+
+    // Mirror from card to checklist shared data
+    function syncCardToChecklist(t, taskCardId) {
+      fetchCardDetails(taskCardId).then(cardData => {
+        t.get('checklistItem', 'shared', 'mirroredData')
+          .then(existingData => {
+            if (!existingData ||
+                existingData.name !== cardData.name ||
+                existingData.due !== cardData.due ||
+                JSON.stringify(existingData.idMembers) !== JSON.stringify(cardData.idMembers)) {
+              t.set('checklistItem', 'shared', 'mirroredData', {
+                name: cardData.name,
+                due: cardData.due,
+                idMembers: cardData.idMembers
+              });
+            }
+          });
+      });
+    }
+
+    // Mirror from checklist shared data to the card
+    function syncChecklistToCard(t) {
+      t.get('checklistItem', 'shared', 'mirroredData')
+        .then(mirroredData => {
+          if (mirroredData) {
+            t.get('checklistItem', 'shared', 'taskCardId')
+              .then(taskCardId => {
+                if (taskCardId) {
+                  fetchCardDetails(taskCardId).then(cardData => {
+                    if (!cardData ||
+                        cardData.name !== mirroredData.name ||
+                        cardData.due !== mirroredData.due ||
+                        JSON.stringify(cardData.idMembers) !== JSON.stringify(mirroredData.idMembers)) {
+                      updateCard(taskCardId, mirroredData)
+                        .then(updatedCard => {
+                          console.log("Card updated:", updatedCard);
+                        });
+                    }
+                  });
+                }
+              });
+          }
+        });
+    }
+
+    // Initialize the Power-Up with the required capabilities
+    TrelloPowerUp.initialize({
+      // Checklist item button: Adds a button to each checklist item.
+      'checklist-buttons': function(t, options) {
+        return [{
+          text: 'Task Card',
+          callback: function(t, options) {
+            return t.get('checklistItem', 'shared', 'taskCardId')
+              .then(function(taskCardId) {
+                if (taskCardId) {
+                  // First, sync any updates from the card to the checklist.
+                  syncCardToChecklist(t, taskCardId);
+                  window.open('https://trello.com/c/' + taskCardId, '_blank');
+                  return t.closePopup();
+                } else {
+                  // No task card yet—open the popup to create one.
+                  return t.popup({
+                    title: 'Create Task Card',
+                    url: './create-task.html',
+                    height: 250
+                  });
+                }
+              });
+          }
+        }];
+      },
+
+      // Card badges: If a card is linked to a task card, display a badge.
+      'card-badges': function(t, options) {
+        return t.get('card', 'shared', 'taskCardId')
+          .then(function(taskCardId) {
+            if (taskCardId) {
+              return [{
+                title: 'View Task',
+                text: 'Task Card',
+                callback: function(t) {
+                  syncCardToChecklist(t, taskCardId);
+                  window.open('https://trello.com/c/' + taskCardId, '_blank');
+                  return t;
+                }
+              }];
+            }
+            return [];
+          });
+      },
+
+      // Card detail badges: Provides similar functionality in the detailed card view.
+      'card-detail-badges': function(t, options) {
+        return t.get('card', 'shared', 'taskCardId')
+          .then(function(taskCardId) {
+            if (taskCardId) {
+              return [{
+                title: 'View Task',
+                text: 'Task Card',
+                callback: function(t) {
+                  syncCardToChecklist(t, taskCardId);
+                  window.open('https://trello.com/c/' + taskCardId, '_blank');
+                  return t;
+                }
+              }];
+            }
+            return [];
+          });
+      },
+
+      // onRender: Trigger a sync from checklist to card when the Power-Up iframe loads.
+      'onRender': function(t) {
+        syncChecklistToCard(t);
+        return t.render();
+      }
+    });
+  </script>
 </head>
 <body>
-    <h1>Trello Power-Up Loaded</h1>
-
-    <script>
-        TrelloPowerUp.initialize({
-            "card-back-section": function (t, options) {
-                return {
-                    title: "Custom Checklist",
-                    content: {
-                        type: "iframe",
-                        url: t.signUrl("https://birdieligos.github.io/trello-powerup-test/checklist.html")
-                    }
-                };
-            }
-        });
-
-        console.log("Trello Power-Up Initialized");
-    </script>
+  <!-- This file does not require any visible content—it is loaded by Trello when needed. -->
 </body>
 </html>
