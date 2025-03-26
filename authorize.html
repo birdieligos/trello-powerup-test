@@ -10,6 +10,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       var t = TrelloPowerUp.iframe();
+      console.log("Authorization flow started...");
+
       t.authorize({
         type: 'popup',
         scope: { read: true, write: true, account: true },
@@ -17,10 +19,15 @@
         name: 'Task Checklist Power-Up'
       })
       .then(function(token) {
+        console.log("Authorization successful. Retrieved token:", token);
         // Store the token in the user's private storage.
-        return t.set('member', 'private', 'trello_token', token);
+        return t.set('member', 'private', 'trello_token', token)
+          .then(function() {
+            console.log("Token stored in member private storage.");
+          });
       })
       .then(function() {
+        console.log("Closing authorization popup...");
         t.closePopup();
       })
       .catch(function(err) {
