@@ -9,17 +9,20 @@
   <h3>Authorizing...</h3>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      var t = TrelloPowerUp.iframe();
-      console.log("Authorization flow started...");
+      console.log("Starting authorization flow...");
 
+      var t = TrelloPowerUp.iframe();
       t.authorize({
         type: 'popup',
         scope: { read: true, write: true, account: true },
-        expiration: 'never',
-        name: 'Task Checklist Power-Up'
+        expiration: 'never'
+        // If your key is tied to your Power-Up, you can omit `name` & `author`
+        // name: 'Task Checklist Power-Up',
+        // author: 'Your Company',
       })
       .then(function(token) {
         console.log("Authorization successful. Retrieved token:", token);
+
         // Store the token in the user's private storage.
         return t.set('member', 'private', 'trello_token', token)
           .then(function() {
@@ -31,7 +34,7 @@
         t.closePopup();
       })
       .catch(function(err) {
-        console.error('Authorization error:', err);
+        console.error("Authorization error:", err);
       });
     });
   </script>
