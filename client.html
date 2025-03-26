@@ -37,7 +37,7 @@
       // Default list name for new task cards
       const DEFAULT_LIST_NAME = "TASK | On the Horizon";
 
-      // Function to get the default list ID based on the board ID and DEFAULT_LIST_NAME
+      // Function to get the default list ID from the board context
       function getDefaultListId(boardId) {
         const url = `https://api.trello.com/1/boards/${boardId}/lists?fields=name&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}`;
         return fetch(url)
@@ -68,24 +68,23 @@
             return getDefaultListId(boardId);
           })
           .then(function(defaultListId) {
-            // Build parameters to create the new card
+            // Build parameters to create a new card
             const params = new URLSearchParams();
             params.append("name", taskName);
             params.append("due", dueDate);
             params.append("idList", defaultListId);
-            if(members.length > 0) {
+            if (members.length > 0) {
               params.append("idMembers", members.join(','));
             }
             params.append("key", TRELLO_API_KEY);
             params.append("token", TRELLO_TOKEN);
-            
             return fetch(`https://api.trello.com/1/cards?${params.toString()}`, {
               method: 'POST'
             });
           })
           .then(response => response.json())
           .then(card => {
-            // Save the new card's ID and mirror data in the checklist item shared storage.
+            // Save the new card's ID and mirrored data in the checklist item shared storage.
             return t.set('checklistItem', 'shared', 'taskCardId', card.id)
               .then(() => {
                 return t.set('checklistItem', 'shared', 'mirroredData', {
