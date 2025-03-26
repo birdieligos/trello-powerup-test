@@ -78,9 +78,9 @@
         });
     }
 
-    // Initialize the Power-Up with the required capabilities
+    // Initialize the Power-Up with the required capabilities plus dummy implementations for unused ones.
     TrelloPowerUp.initialize({
-      // Checklist item button: Adds a button to each checklist item.
+      // Implemented capabilities:
       'checklist-buttons': function(t, options) {
         return [{
           text: 'Task Card',
@@ -88,12 +88,12 @@
             return t.get('checklistItem', 'shared', 'taskCardId')
               .then(function(taskCardId) {
                 if (taskCardId) {
-                  // First, sync any updates from the card to the checklist.
+                  // Sync updates from the card to the checklist.
                   syncCardToChecklist(t, taskCardId);
                   window.open('https://trello.com/c/' + taskCardId, '_blank');
                   return t.closePopup();
                 } else {
-                  // No task card yet—open the popup to create one.
+                  // No task card exists—open the popup to create one.
                   return t.popup({
                     title: 'Create Task Card',
                     url: './create-task.html',
@@ -105,7 +105,6 @@
         }];
       },
 
-      // Card badges: If a card is linked to a task card, display a badge.
       'card-badges': function(t, options) {
         return t.get('card', 'shared', 'taskCardId')
           .then(function(taskCardId) {
@@ -124,7 +123,6 @@
           });
       },
 
-      // Card detail badges: Provides similar functionality in the detailed card view.
       'card-detail-badges': function(t, options) {
         return t.get('card', 'shared', 'taskCardId')
           .then(function(taskCardId) {
@@ -143,10 +141,20 @@
           });
       },
 
-      // onRender: Trigger a sync from checklist to card when the Power-Up iframe loads.
       'onRender': function(t) {
         syncChecklistToCard(t);
         return t.render();
+      },
+
+      // Dummy implementations for unused capabilities to prevent unsupported command errors.
+      'board-buttons': function(t, options) {
+        return [];
+      },
+      'card-buttons': function(t, options) {
+        return [];
+      },
+      'card-back-section': function(t, options) {
+        return [];
       }
     });
   </script>
