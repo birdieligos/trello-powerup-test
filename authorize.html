@@ -10,11 +10,11 @@
   <button id="authorizeBtn">Authorize</button>
 
   <script>
-    // We'll define a "authorize" function so callback.html can call window.opener.authorize(token).
+    // We'll define a global "authorize" function so callback.html can call window.opener.authorize(token).
     window.authorize = function(token) {
       console.log("Got token from Trello callback:", token);
 
-      // Save the token in private storage
+      // Save the token in private member storage
       t.set('member', 'private', 'trello_token', token)
         .then(function() {
           console.log("Token stored in private storage. Closing popup...");
@@ -24,29 +24,25 @@
 
     const t = TrelloPowerUp.iframe();
 
-    // Construct the full Trello OAuth URL:
-    // - expiration=never
-    // - scope=read,write
-    // - response_type=token
-    // - callback_method=fragment
-    // - return_url -> your callback.html
+    // This Trello OAuth URL is fully formed—no placeholders
     const authUrl = [
       "https://trello.com/1/authorize?",
       "expiration=never",
       "scope=read,write",
       "response_type=token",
       "callback_method=fragment",
-      "key=7443867af11d32c3e8f8152b114201fd",
-      "return_url=" + encodeURIComponent("https://yourdomain.com/callback.html")
+      "key=7443867af11d32c3e8f8152b114201fd", // Your real API key
+      // Replace with your actual callback page if needed:
+      "return_url=" + encodeURIComponent("https://birdieligos.github.io/trello-powerup-test/callback.html")
     ].join("&");
 
     const authorizeOpts = {
       width: 680,
       height: 580,
       validToken: function(token) {
-        return !!token; // If token is non-empty, we consider it valid
+        // If token is non-empty, consider it valid
+        return !!token;
       },
-      // Optional callback if you want direct access to the popup window
       windowCallback: function(win) {
         console.log("Opened Trello OAuth window:", win);
       }
@@ -56,8 +52,7 @@
       t.authorize(authUrl, authorizeOpts)
         .then(function(token) {
           console.log("Trello auth complete, token:", token);
-          // Usually, we won't get here if we rely on callback.html to finalize the token
-          // But if Trello decides to resolve here, we can store it again or ignore
+          // If Trello resolves here, we can store it again or just ignore
           return t.set('member', 'private', 'trello_token', token);
         })
         .catch(function(err) {
