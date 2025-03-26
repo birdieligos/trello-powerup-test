@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Authorize Power-Up</title>
+  <!-- Load the Trello Power-Up client library -->
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+  <h3>Authorizing...</h3>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var t = TrelloPowerUp.iframe();
+      t.authorize({
+        type: 'popup',
+        scope: { read: true, write: true },
+        expiration: 'never',
+        name: 'Task Checklist Power-Up'
+      })
+      .then(function(token) {
+        return t.set('member', 'private', 'trello_token', token);
+      })
+      .then(function() {
+        t.closePopup();
+      })
+      .catch(function(err) {
+        console.error('Authorization error:', err);
+      });
+    });
+  </script>
+</body>
+</html>
