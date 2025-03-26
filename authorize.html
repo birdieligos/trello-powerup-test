@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>Authorize Power-Up</title>
-  <!-- Load the Trello Power-Up client library -->
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -13,7 +12,7 @@
       var t = TrelloPowerUp.iframe();
       t.authorize({
         type: 'popup',
-        scope: { read: true, write: true },
+        scope: { read: true, write: true, account: true },
         expiration: 'never',
         name: 'Task Checklist Power-Up'
       })
