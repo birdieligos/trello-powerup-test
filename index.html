@@ -9,7 +9,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       TrelloPowerUp.initialize({
-        // Check if the user has already authorized the Power-Up.
+        // Check if the user has already authorized (token stored in private member storage)
         'authorization-status': function(t, options) {
           return t.get('member', 'private', 'trello_token')
             .then(function(token) {
@@ -24,7 +24,7 @@
             height: 150
           });
         },
-        // Add a button on the card that lets the user create or edit a task checklist.
+        // Add a button to the card (using card-buttons capability) to create or edit a task checklist.
         'card-buttons': function(t, options) {
           return t.get('card', 'shared', 'taskChecklistId')
             .then(function(taskChecklistId) {
@@ -34,14 +34,14 @@
                 callback: function(t, options) {
                   return t.popup({
                     title: btnText,
-                    url: './client.html',
+                    url: './client.html',  // your checklist creation/editing popup
                     height: 250
                   });
                 }
               }];
             });
         },
-        // Optionally, add a detail badge to quickly access the checklist.
+        // Optional: add a badge in the card detail view for quick access.
         'card-detail-badges': function(t, options) {
           return t.get('card', 'shared', 'taskChecklistId')
             .then(function(taskChecklistId) {
