@@ -12,17 +12,16 @@
       console.log("Starting authorization flow...");
 
       var t = TrelloPowerUp.iframe();
+
+      // Remove 'account' if you don't need the user’s email or advanced access.
+      // If your key is tied to your Power-Up, you usually don't need 'author' either.
       t.authorize({
         type: 'popup',
-        scope: { read: true, write: true, account: true },
+        scope: { read: true, write: true }, // <-- No account here
         expiration: 'never'
-        // If your key is tied to your Power-Up, you can omit `name` & `author`
-        // name: 'Task Checklist Power-Up',
-        // author: 'Your Company',
       })
       .then(function(token) {
         console.log("Authorization successful. Retrieved token:", token);
-
         // Store the token in the user's private storage.
         return t.set('member', 'private', 'trello_token', token)
           .then(function() {
