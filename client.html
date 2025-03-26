@@ -21,14 +21,15 @@
       var t = TrelloPowerUp.iframe();
       const TRELLO_API_KEY = "7443867af11d32c3e8f8152b114201fd";
 
-      // Retrieve the user's token from private storage.
+      // Retrieve the user-specific token from private storage.
       function getUserToken() {
-        return t.get('member', 'private', 'trello_token').then(function(token) {
-          if (!token) {
-            throw new Error("User not authorized");
-          }
-          return token;
-        });
+        return t.get('member', 'private', 'trello_token')
+          .then(function(token) {
+            if (!token) {
+              throw new Error("User not authorized");
+            }
+            return token;
+          });
       }
 
       document.getElementById('task-checklist-form').addEventListener('submit', function(e) {
