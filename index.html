@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8">
   <title>Trello Power-Up: Task Checklist & Authorization</title>
-  <!-- Load the Trello Power-Up client library -->
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
       TrelloPowerUp.initialize({
-        // Authorization capabilities
+        // Check if the user has already authorized the Power-Up.
         'authorization-status': function(t, options) {
           return t.get('member', 'private', 'trello_token')
             .then(function(token) {
               return { authorized: !!token };
             });
         },
+        // If not authorized, show the authorization popup.
         'show-authorization': function(t, options) {
           return t.popup({
             title: 'Authorize Power-Up',
@@ -24,17 +24,16 @@
             height: 150
           });
         },
-
-        // Card button to create/edit a task checklist
+        // Add a button on the card that lets the user create or edit a task checklist.
         'card-buttons': function(t, options) {
           return t.get('card', 'shared', 'taskChecklistId')
             .then(function(taskChecklistId) {
-              var buttonText = taskChecklistId ? 'Edit Task Checklist' : 'Create Task Checklist';
+              var btnText = taskChecklistId ? 'Edit Task Checklist' : 'Create Task Checklist';
               return [{
-                text: buttonText,
+                text: btnText,
                 callback: function(t, options) {
                   return t.popup({
-                    title: buttonText,
+                    title: btnText,
                     url: './client.html',
                     height: 250
                   });
@@ -42,8 +41,7 @@
               }];
             });
         },
-
-        // Optional: Card detail badge to quickly edit the checklist
+        // Optionally, add a detail badge to quickly access the checklist.
         'card-detail-badges': function(t, options) {
           return t.get('card', 'shared', 'taskChecklistId')
             .then(function(taskChecklistId) {
