@@ -3,7 +3,6 @@
 <head>
   <meta charset="utf-8">
   <title>Create/Edit Task Checklist</title>
-  <!-- Load the Trello Power-Up client library -->
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -17,36 +16,46 @@
       <button type="submit">Save Checklist</button>
     </div>
   </form>
-
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const t = TrelloPowerUp.iframe();
-      // Trello API credentials (for demo purposes only; do not expose secrets in production)
+    document.addEventListener("DOMContentLoaded", function() {
+      var t = TrelloPowerUp.iframe();
       const TRELLO_API_KEY = "7443867af11d32c3e8f8152b114201fd";
-      const TRELLO_TOKEN = "ae53988077e16ae1a2d07602b5ff53b987f22d7a6348b7ef913c863ff79aa189";
 
-      // When the form is submitted, create a new checklist on the card.
+      // Retrieve the user's token from private storage.
+      function getUserToken() {
+        return t.get('member', 'private', 'trello_token').then(function(token) {
+          if (!token) {
+            throw new Error("User not authorized");
+          }
+          return token;
+        });
+      }
+
       document.getElementById('task-checklist-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        const checklistName = document.getElementById('checklist-name').value;
-        
-        // Get the current card's ID.
+        var checklistName = document.getElementById('checklist-name').value;
+        // Get the current card ID.
         t.card('id').then(function(card) {
-          const cardId = card.id;
-          // Build the URL for creating a checklist via the Trello API.
-          const url = `https://api.trello.com/1/cards/${cardId}/checklists?name=${encodeURIComponent(checklistName)}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}`;
-          return fetch(url, { method: 'POST' });
+          return getUserToken().then(function(userToken) {
+            var cardId = card.id;
+            var url = `https://api.trello.com/1/cards/${cardId}/checklists?name=${encodeURIComponent(checklistName)}&key=${TRELLO_API_KEY}&token=${userToken}`;
+            return fetch(url, { method: 'POST' });
+          });
         })
-        .then(response => response.json())
-        .then(checklistData => {
+        .then(function(response) {
+          if (!response.ok) {
+            return response.text().then(text => { throw new Error(text); });
+          }
+          return response.json();
+        })
+        .then(function(checklistData) {
           // Save the checklist ID in the card's shared storage.
           return t.set('card', 'shared', 'taskChecklistId', checklistData.id);
         })
-        .then(() => {
-          // Close the popup after saving.
+        .then(function() {
           t.closePopup();
         })
-        .catch(err => {
+        .catch(function(err) {
           console.error("Error creating checklist:", err);
         });
       });
