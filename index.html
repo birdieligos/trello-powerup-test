@@ -9,17 +9,9 @@
 <body>
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      /**
-       * Capabilities Used:
-       * 1) authorization-status (checks if user has a saved token)
-       * 2) show-authorization (prompts user to grant permission)
-       * 3) card-buttons (creates a “Create/Edit Task Checklist” button)
-       * 4) card-detail-badges (optionally shows a “Task Checklist” badge in card detail view)
-       */
-
       TrelloPowerUp.initialize({
 
-        // 1. Authorization check: see if a token is already stored for this user
+        // 1. Authorization check: see if a token is already stored
         'authorization-status': function(t, options) {
           return t.get('member', 'private', 'trello_token')
             .then(function(token) {
@@ -37,48 +29,45 @@
           });
         },
 
-        // 3. Add a button on each card (card-buttons) to create or edit a task checklist
+        // 3. Card buttons: ALWAYS show "Create Task Checklist"
+        //    (Removed logic that checks if a checklist ID exists)
         'card-buttons': function(t, options) {
-          return t.get('card', 'shared', 'taskChecklistId')
-            .then(function(taskChecklistId) {
-              var btnText = taskChecklistId ? 'Edit Task Checklist' : 'Create Task Checklist';
-              return [{
-                text: btnText,
-                callback: function(t, options) {
-                  return t.popup({
-                    title: btnText,
-                    url: './client.html',  // your checklist creation/editing popup
-                    height: 250
-                  });
-                }
-              }];
-            });
+          return [{
+            text: 'Create Task Checklist',
+            callback: function(t, options) {
+              return t.popup({
+                title: 'Create Task Checklist',
+                url: './client.html',
+                height: 250
+              });
+            }
+          }];
         },
 
-        // 4. Optionally add a badge in the card detail view for quick access
-        'card-detail-badges': function(t, options) {
-          return t.get('card', 'shared', 'taskChecklistId')
-            .then(function(taskChecklistId) {
-              if (taskChecklistId) {
-                return [{
-                  title: 'Task Checklist',
-                  text: 'Edit',
-                  callback: function(t) {
-                    return t.popup({
-                      title: 'Edit Task Checklist',
-                      url: './client.html',
-                      height: 250
-                    });
-                  }
-                }];
-              }
-              return [];
-            });
-        },
+        // 4. REMOVE the card-detail-badges entirely. 
+        //    This removes the "Task Checklist" badge on the back of the card.
+        // 'card-detail-badges': function(t, options) {
+        //   return t.get('card', 'shared', 'taskChecklistId')
+        //     .then(function(taskChecklistId) {
+        //       if (taskChecklistId) {
+        //         return [{
+        //           title: 'Task Checklist',
+        //           text: 'Edit',
+        //           callback: function(t) {
+        //             return t.popup({
+        //               title: 'Edit Task Checklist',
+        //               url: './client.html',
+        //               height: 250
+        //             });
+        //           }
+        //         }];
+        //       }
+        //       return [];
+        //     });
+        // },
 
-        // (Optional) Run code when Trello finishes rendering your iframe
+        // (Optional) If you want to keep onRender:
         'onRender': function(t) {
-          // If you need to do any final UI updates, do them here
           return t.render();
         }
       });
