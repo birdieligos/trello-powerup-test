@@ -5,11 +5,8 @@
   <title>Create Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    /* If you ever @import another stylesheet, do it here BEFORE any other rules:
-       @import url('my-styles.css');
-    */
-    .task-entry { margin-top: 10px; }
-    .task-entry input, .task-entry select { margin-right: 5px; }
+    .task-entry { margin-top:10px }
+    .task-entry input { margin-right:5px }
   </style>
 </head>
 <body>
@@ -17,65 +14,76 @@
   <form id="create-task-form">
     <div>
       <label for="checklist-name">Checklist Name:</label>
-      <input
-        type="text"
-        id="checklist-name"
-        name="checklist-name"
-        value="Task Checklist"
-        required>
+      <input type="text" id="checklist-name" name="checklist-name"
+             value="Task Checklist" required>
     </div>
     <div id="tasks-container"></div>
     <button type="button" id="add-task">Add Task</button>
-    <div>
-      <button type="submit" id="submit-tasks">Create Checklist</button>
-    </div>
+    <div><button type="submit">Create Checklist</button></div>
   </form>
 
   <script>
     const t = TrelloPowerUp.iframe();
-    const API_KEY = "7443867af11d32c3e8f8152b114201fd";
+    const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-    function createTaskElement(index) {
-      const div = document.createElement('div');
-      div.className = 'task-entry';
-      div.innerHTML = `
-        <label for="task-name-${index}" class="sr-only">Task name</label>
-        <input
-          type="text"
-          id="task-name-${index}"
-          name="task-name-${index}"
-          class="task-name"
-          placeholder="Task name"
-          required>
-        <label for="task-date-${index}" class="sr-only">Due date</label>
-        <input
-          type="date"
-          id="task-date-${index}"
-          name="task-date-${index}"
-          class="task-date"
-          required>
-        <label for="task-member-${index}" class="sr-only">Member username</label>
-        <input
-          type="text"
-          id="task-member-${index}"
-          name="task-member-${index}"
-          class="task-member"
-          placeholder="@memberUsername"
-          required>
+    function createTaskElement(idx) {
+      const d = document.createElement('div');
+      d.className = 'task-entry';
+      d.innerHTML = `
+        <input id="task-name-${idx}" name="task-name-${idx}"
+               class="task-name" placeholder="Task name" required>
+        <input id="task-date-${idx}" name="task-date-${idx}"
+               type="date" class="task-date" required>
+        <input id="task-member-${idx}" name="task-member-${idx}"
+               class="task-member" placeholder="@username" required>
       `;
-      return div;
+      return d;
     }
 
-    document.getElementById('add-task').addEventListener('click', () => {
+    document.getElementById('add-task').onclick = () => {
       const container = document.getElementById('tasks-container');
       container.appendChild(createTaskElement(container.children.length));
-    });
+    };
 
-    document.getElementById('create-task-form').addEventListener('submit', async (e) => {
+    document.getElementById('create-task-form').onsubmit = async e => {
       e.preventDefault();
-      // ... rest of your submission logic unchanged ...
+      const checklistName = document.getElementById('checklist-name').value;
+      const entries = Array.from(document.querySelectorAll('.task-entry'));
+      const { id: cardId, idBoard } = await t.card('id','idBoard');
+      const token = await t.get('member','private','trello_token');
+      // 1) create checklist
+      let res = await fetch(
+        `https://api.trello.com/1/cards/${cardId}/checklists` +
+        `?name=${encodeURIComponent(checklistName)}` +
+        `&key=${API_KEY}&token=${token}`,
+        { method:'POST' }
+      );
+      const { id: checklistId } = await res.json();
+      await t.set('card','shared','taskChecklistId',checklistId);
+
+      // 2) create items + store metadata
+      for (let n=0; n<entries.length; n++) {
+        const e = entries[n];
+        const name   = e.querySelector('.task-name').value;
+        const date   = e.querySelector('.task-date').value;
+        const member = e.querySelector('.task-member').value.replace(/^@/,'');
+        // create checklist item
+        res = await fetch(
+          `https://api.trello.com/1/checklists/${checklistId}/checkItems` +
+          `?name=${encodeURIComponent(name)}` +
+          `&key=${API_KEY}&token=${token}`,
+          { method:'POST' }
+        );
+        const { id: itemId } = await res.json();
+        // store metadata for later
+        await t.set(
+          'card','shared',`taskMeta-${itemId}`,
+          { due: date, member, done: false }
+        );
+      }
+
       t.closePopup();
-    });
+    };
   </script>
 </body>
 </html>
