@@ -11,6 +11,7 @@
     "authorization-status",
     "show-authorization",
     "card-buttons",
+    "card-badges",     
     "checklist-actions",
     "on-render"
   ],
