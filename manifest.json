@@ -13,7 +13,7 @@
     "card-buttons",
     "card-badges",
     "card-detail-badges",
-    "checklist-actions",     ← new
+    "checklist-actions",     
     "on-render"
   ],
   "icon": {
