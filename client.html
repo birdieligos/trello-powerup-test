@@ -4,106 +4,32 @@
   <meta charset="utf-8">
   <title>Create Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <style>
-    .task-entry { margin-top: 10px; }
-    .task-entry input, .task-entry select { margin-right: 5px; }
-  </style>
 </head>
 <body>
-  <h3>Create Task Checklist</h3>
-  <form id="create-task-form">
-    <div>
-      <label for="checklist-name">Checklist Name:</label>
-      <input type="text" id="checklist-name" name="checklist-name" value="Task Checklist" required>
-    </div>
-    <div id="tasks-container"></div>
-    <button type="button" id="add-task">Add Task</button>
-    <div>
-      <button type="submit">Create Checklist</button>
-    </div>
-  </form>
-
   <script>
     const t = TrelloPowerUp.iframe();
-    const API_KEY = "7443867af11d32c3e8f8152b114201fd";
+    const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-    function getToken() {
-      return t.get('member', 'private', 'trello_token').then(token => {
-        if (!token) throw new Error("User not authorized");
-        return token;
-      });
+    async function main() {
+      // get current card ID
+      const { id } = await t.card('id');
+      // fetch token from private storage
+      const token = await t.get('member','private','trello_token');
+      if (!token) throw new Error('User not authorized');
+      // create checklist
+      await fetch(
+        `https://api.trello.com/1/cards/${id}/checklists` +
+        `?name=${encodeURIComponent('Task Checklist')}` +
+        `&key=${API_KEY}&token=${token}`,
+        { method: 'POST' }
+      );
+      // close popup
+      t.closePopup();
     }
 
-    function createTaskElement(index) {
-      const div = document.createElement('div');
-      div.className = 'task-entry';
-      div.innerHTML = `
-        <input type="text" placeholder="Task name" class="task-name" required>
-        <input type="date" class="task-date" required>
-        <input type="text" placeholder="@memberUsername" class="task-member" required>
-      `;
-      return div;
-    }
-
-    document.getElementById('add-task').addEventListener('click', () => {
-      const container = document.getElementById('tasks-container');
-      container.appendChild(createTaskElement(container.children.length));
-    });
-
-    document.getElementById('create-task-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const checklistName = document.getElementById('checklist-name').value;
-      const tasks = Array.from(document.querySelectorAll('.task-entry'));
-      const taskData = tasks.map(task => ({
-        name: task.querySelector('.task-name').value,
-        date: task.querySelector('.task-date').value,
-        member: task.querySelector('.task-member').value.replace('@','')
-      }));
-
-      try {
-        const token = await getToken();
-        const card = await t.card('id');
-
-        // Create checklist
-        const checklistRes = await fetch(`https://api.trello.com/1/cards/${card.id}/checklists?name=${encodeURIComponent(checklistName)}&key=${API_KEY}&token=${token}`, { method: 'POST' });
-        if (!checklistRes.ok) throw new Error(await checklistRes.text());
-        const checklist = await checklistRes.json();
-
-        // Store checklist ID
-        await t.set('card', 'shared', 'taskChecklistId', checklist.id);
-
-        // Create checklist items and associated cards
-        for (const task of taskData) {
-          if (!task.name || !task.date || !task.member) {
-            alert("Member and Date must be assigned to create a task card");
-            continue;
-          }
-
-          // Add checklist item
-          const itemRes = await fetch(`https://api.trello.com/1/checklists/${checklist.id}/checkItems?name=${encodeURIComponent(task.name)}&key=${API_KEY}&token=${token}`, { method: 'POST' });
-          const item = await itemRes.json();
-
-          // Create task card
-          const listsRes = await fetch(`https://api.trello.com/1/boards/${card.idBoard}/lists?key=${API_KEY}&token=${token}`);
-          const lists = await listsRes.json();
-          const taskList = lists.find(l => l.name === 'TASK | On the Horizon');
-          if (!taskList) throw new Error('Task list not found');
-
-          const cardRes = await fetch(`https://api.trello.com/1/cards?name=${encodeURIComponent(task.name)}&idList=${taskList.id}&due=${task.date}&idMembers=${task.member}&key=${API_KEY}&token=${token}`, { method: 'POST' });
-          const newCard = await cardRes.json();
-
-          // Add Hello Epics parent-child relationship
-          await fetch(`https://api.helloepics.com/link?parent=${card.id}&child=${newCard.id}&key=${API_KEY}&token=${token}`, { method: 'POST' });
-
-          // Store connection in shared storage
-          await t.set('card', 'shared', `checklistItem-${item.id}`, newCard.id);
-        }
-
-        t.closePopup();
-      } catch (err) {
-        console.error(err);
-        alert(err.message);
-      }
+    main().catch(err => {
+      console.error(err);
+      t.closePopup();
     });
   </script>
 </body>
