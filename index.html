@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trello Power‑Up (1.6.7)</title>
+  <title>Trello Power‑Up (1.6.9)</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -17,16 +17,14 @@
   }
 
   TrelloPowerUp.initialize({
-
-    // 1) OAuth status
+    // 1) OAuth handlers
     'authorization-status': t =>
       t.get('member','private','trello_token')
        .then(tok => ({ authorized: !!tok })),
-
     'show-authorization': t =>
       t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    // 2) Card button → create the checklist
+    // 2) Card‑button → create the Task Checklist immediately
     'card-buttons': t => [{
       text: 'Create Task Checklist',
       callback: async t => {
@@ -52,11 +50,18 @@
     'card-badges': t => [],
 
     // 4) Stub detail‑of‑card badges
-    'card-detail-badges': async t => [],
+    'card-detail-badges': t => [],
 
-    // 5) Checklist‑item “…” menu → Convert to Task Card
+    // 5) Stub the card‑back section
+    'card-back-section': t => [],
+
+    // 6) Checklist‑item “…” menu → Convert to Task Card
     'checklist-actions': async (t, { checklist, checkItem }) => {
-      if (!checklist || checklist.name !== 'Task Checklist') return [];
+      log('checklist-actions', { checklist, checkItem });
+      if (!checklist || checklist.name !== 'Task Checklist') {
+        log('→ skipping; not Task Checklist');
+        return [];
+      }
       return [{
         text: 'Convert to Task Card',
         callback: async t => {
@@ -72,8 +77,11 @@
           const lists = await fetch(
             `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
           ).then(r => r.json());
+          log('lists', lists.map(l => l.name));
+
           const target = lists.find(l => l.name === 'TASK | On the Horizon');
           log('Found target list', target);
+          if (!target) throw new Error('“TASK | On the Horizon” list not found');
 
           const params = new URLSearchParams({
             name: checkItem.name,
@@ -107,11 +115,11 @@
       }];
     },
 
-    // 6) on-render → allow Trello to redraw
+    // 7) on-render → allow Trello to redraw after refresh signals
     'on-render': t => t.render()
   });
 
-  log('TPU initialized');
+  log('TPU initialized (v1.6.9)');
 </script>
 </body>
 </html>
