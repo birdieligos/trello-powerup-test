@@ -2,148 +2,143 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trello Power‑Up (Verbose Logging)</title>
+  <title>Trello Power‑Up (1.6.6)</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-  // Helper for structured logging
   function log(step, data) {
-    console.groupCollapsed(`🔔 [Power-Up] ${step}`);
+    console.groupCollapsed(`🔔 [TPU] ${step}`);
     if (data !== undefined) console.log(data);
     console.groupEnd();
   }
 
   TrelloPowerUp.initialize({
-    // 1) Check authorization status
+    // 1. OAuth
     'authorization-status': t => {
-      log('authorization-status invoked');
+      log('authorization-status');
       return t.get('member','private','trello_token')
-        .then(token => {
-          log('authorization-status result', { tokenExists: !!token });
-          return { authorized: !!token };
-        })
-        .catch(err => {
-          console.error('[Power-Up] authorization-status error', err);
-          throw err;
-        });
+        .then(tok => ({ authorized: !!tok }));
     },
-
-    // 2) Show OAuth popup when needed
     'show-authorization': t => {
-      log('show-authorization invoked');
-      return t.popup({ title: 'Authorize Power‑Up', url: './authorize.html', height: 150 })
-        .then(() => log('show-authorization popup shown'))
-        .catch(err => console.error('[Power-Up] show-authorization error', err));
+      log('show-authorization');
+      return t.popup({
+        title: 'Authorize Power‑Up',
+        url: './authorize.html',
+        height: 150
+      });
     },
 
-    // 3) Card button to create the "Task Checklist"
+    // 2. Card button
     'card-buttons': t => {
-      log('card-buttons registration');
+      log('card-buttons');
       return [{
         text: 'Create Task Checklist',
         callback: async t => {
-          log('card-button click');
-          try {
-            const { id: cardId } = await t.card('id');
-            log('card id retrieved', cardId);
+          log('card-button clicked');
+          const { id: cardId } = await t.card('id');
+          log('card id', cardId);
+          const token = await t.get('member','private','trello_token');
+          log('token exists?', !!token);
 
-            const token = await t.get('member','private','trello_token');
-            log('auth token retrieved', { tokenExists: !!token });
+          const res = await fetch(
+            `https://api.trello.com/1/cards/${cardId}/checklists` +
+            `?name=${encodeURIComponent('Task Checklist')}` +
+            `&key=${API_KEY}&token=${token}`,
+            { method: 'POST' }
+          );
+          const ch = await res.json();
+          log('checklist created', ch);
 
-            const response = await fetch(
-              `https://api.trello.com/1/cards/${cardId}/checklists` +
-              `?name=${encodeURIComponent('Task Checklist')}` +
-              `&key=${API_KEY}&token=${token}`,
-              { method: 'POST' }
-            );
-            const checklist = await response.json();
-            log('checklist created', checklist);
-
-            return { refresh: true };
-          } catch (err) {
-            console.error('[Power-Up] card-buttons callback error', err);
-            throw err;
-          }
+          // tell Trello to re‑render card
+          return { refresh: true };
         }
       }];
     },
 
-    // 4) Checklist-item "…" menu action to convert to a Task Card
+    // 3. Stub front‑of‑card badges
+    'card-badges': t => {
+      log('card-badges stub');
+      return [];
+    },
+
+    // 4. Stub detail‑of‑card badges
+    'card-detail-badges': async t => {
+      log('card-detail-badges stub');
+      return [];
+    },
+
+    // 5. Checklist‑item “…” menu action
     'checklist-actions': async (t, { checklist, checkItem }) => {
-      log('checklist-actions invoked', { checklist, checkItem });
+      log('checklist-actions', { checklist, checkItem });
       if (!checklist || checklist.name !== 'Task Checklist') {
-        log('→ skipping; not Task Checklist');
+        log('→ not Task Checklist, skip');
         return [];
       }
       return [{
         text: 'Convert to Task Card',
         callback: async t => {
-          log('checklist-action selected', checkItem.name);
-          try {
-            const { id: parentId, idBoard } = await t.card('id','idBoard');
-            log('parent card & board ids', { parentId, idBoard });
+          log('menu action clicked', checkItem.name);
 
-            const token = await t.get('member','private','trello_token');
-            log('auth token for conversion', { tokenExists: !!token });
+          const { id: parentId, idBoard } = await t.card('id','idBoard');
+          log('parent/cardBoard IDs', { parentId, idBoard });
+          const token = await t.get('member','private','trello_token');
+          log('token exists?', !!token);
 
-            const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`) || {};
-            log('loaded item metadata', meta);
+          const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`) || {};
+          log('item metadata', meta);
 
-            const lists = await fetch(
-              `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
-            ).then(r => r.json());
-            log('lists fetched', lists.map(l => l.name));
+          const lists = await fetch(
+            `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
+          ).then(r => r.json());
+          log('lists', lists.map(l => l.name));
 
-            const target = lists.find(l => l.name === 'TASK | On the Horizon');
-            log('target list', target);
+          const target = lists.find(l => l.name === 'TASK | On the Horizon');
+          log('target list', target);
+          if (!target) throw new Error('TASK | On the Horizon not found');
 
-            const params = new URLSearchParams({
-              name: checkItem.name,
-              idList: target.id,
-              ...(meta.due    && { due: meta.due    }),
-              ...(meta.member && { idMembers: meta.member }),
-              ...(meta.done   && { dueComplete: meta.done }),
-              key: API_KEY,
-              token
-            });
-            log('creating child card with params', params.toString());
+          const params = new URLSearchParams({
+            name: checkItem.name,
+            idList: target.id,
+            ...(meta.due    && { due: meta.due    }),
+            ...(meta.member && { idMembers: meta.member }),
+            ...(meta.done   && { dueComplete: meta.done }),
+            key: API_KEY,
+            token
+          });
+          log('create card params', params.toString());
 
-            const newCard = await fetch(
-              `https://api.trello.com/1/cards?${params.toString()}`,
-              { method: 'POST' }
-            ).then(r => r.json());
-            log('child card created', newCard);
+          const newCard = await fetch(
+            `https://api.trello.com/1/cards?${params.toString()}`,
+            { method: 'POST' }
+          ).then(r => r.json());
+          log('new card', newCard);
 
-            await fetch(
-              `https://api.helloepics.com/link?parent=${parentId}` +
-              `&child=${newCard.id}&key=${API_KEY}&token=${token}`,
-              { method: 'POST' }
-            );
-            log('linked with Hello Epics', { parentId, child: newCard.id });
+          await fetch(
+            `https://api.helloepics.com/link?parent=${parentId}` +
+            `&child=${newCard.id}&key=${API_KEY}&token=${token}`,
+            { method: 'POST' }
+          );
+          log('linked epic', { parentId, child: newCard.id });
 
-            await t.set('card','shared', `taskCard-${checkItem.id}`, newCard.id);
-            log('stored mapping in shared storage', { [`taskCard-${checkItem.id}`]: newCard.id });
+          await t.set('card','shared', `taskCard-${checkItem.id}`, newCard.id);
+          log('stored mapping', newCard.id);
 
-            return { refresh: true };
-          } catch (err) {
-            console.error('[Power-Up] checklist-actions callback error', err);
-            throw err;
-          }
+          return { refresh: true };
         }
       }];
     },
 
-    // 5) Allow Trello to re-render after our refresh signals
+    // 6. Allow UI refresh after our callbacks
     'on-render': t => {
-      log('on-render invoked');
+      log('on-render');
       return t.render();
     }
   });
 
-  log('Power-Up script loaded');
+  log('TPU initialized');
 </script>
 </body>
 </html>
