@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Trello Power-Up</title>
+  <title>Trello Power‑Up</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -10,70 +10,55 @@
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
   TrelloPowerUp.initialize({
-    // 1) OAuth
     'authorization-status': t =>
       t.get('member','private','trello_token')
-       .then(token => ({ authorized: !!token })),
+       .then(token=>({authorized:!!token})),
 
     'show-authorization': t =>
-      t.popup({ title: 'Authorize Power-Up', url: './authorize.html', height: 150 }),
+      t.popup({ title:'Authorize', url:'./authorize.html', height:150 }),
 
-    // 2) Card button to open the checklist popup
-    'card-buttons': t => [{
-      text: 'Create Task Checklist',
-      callback: t =>
-        t.popup({ title: 'Create Task Checklist', url: './client.html', height: 250 })
+    'card-buttons': t=>[{
+      text:'Create Task Checklist',
+      callback:t=>
+        t.popup({ title:'Create Task Checklist', url:'./client.html', height:250 })
     }],
 
-    // 3) Stub front-of-card badges so Hello Epics can render its UI
-    'card-badges': t => [],
+    'card-badges': t=>[], // stub for Hello Epics
 
-    // 4) Per-checklist-item badge for “Create Task Card”
-    'card-detail-badges': async (t, { checklist, checkItem }) => {
-      if (!checklist || !checkItem) return [];
+    'card-detail-badges': async (t,{checklist,checkItem})=>{
+      console.log('🔔 badge handler called for checklist:', checklist && checklist.name, 'item:', checkItem && checkItem.name);
+      // only show on our Task Checklist
+      if (!checklist || checklist.name !== 'Task Checklist') {
+        return [];
+      }
       return [{
-        text: 'Create Task Card',
+        text:'Create Task Card',
         callback: async t => {
-          const { id: parentCardId, idBoard } = await t.card('id','idBoard');
-          const token = await t.get('member','private','trello_token');
-          // load stored metadata
-          const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`);
-          if (!meta) throw new Error('Missing metadata for this item');
-          // find “TASK | On the Horizon” list
-          const lists = await fetch(
+          // (your existing conversion logic here)
+          const {id:parentId,idBoard}=await t.card('id','idBoard');
+          const token=await t.get('member','private','trello_token');
+          const lists=await fetch(
             `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
-          ).then(r => r.json());
-          const target = lists.find(l => l.name === 'TASK | On the Horizon');
-          if (!target) throw new Error('Target list not found');
-          // create child card
-          const params = new URLSearchParams({
-            name: checkItem.name,
-            idList: target.id,
-            due: meta.due,
-            idMembers: meta.member,
-            dueComplete: meta.done,
-            key: API_KEY,
-            token
-          });
-          const { id: newCardId } = await fetch(
-            `https://api.trello.com/1/cards?${params.toString()}`,
-            { method: 'POST' }
-          ).then(r => r.json());
-          // link via Hello Epics
+          ).then(r=>r.json());
+          const target=lists.find(l=>l.name==='TASK | On the Horizon');
+          if(!target) throw new Error('List not found');
+          const {id:newCardId}=await fetch(
+            `https://api.trello.com/1/cards?`+
+            `name=${encodeURIComponent(checkItem.name)}`+
+            `&idList=${target.id}&key=${API_KEY}&token=${token}`,
+            {method:'POST'}
+          ).then(r=>r.json());
           await fetch(
-            `https://api.helloepics.com/link?parent=${parentCardId}` +
+            `https://api.helloepics.com/link?parent=${parentId}`+
             `&child=${newCardId}&key=${API_KEY}&token=${token}`,
-            { method: 'POST' }
+            {method:'POST'}
           );
-          // persist mapping
-          await t.set('card','shared', `taskCard-${checkItem.id}`, newCardId);
           return t.reload();
         }
       }];
     },
 
-    // 5) Allow re-rendering after data changes
-    'on-render': t => t.render()
+    'on-render': t=>t.render()
   });
 </script>
 </body>
