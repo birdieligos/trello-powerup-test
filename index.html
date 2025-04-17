@@ -18,7 +18,7 @@
     'show-authorization': t =>
       t.popup({ title:'Authorize', url:'./authorize.html', height:150 }),
 
-    // 2) Single button: create an empty "Task Checklist" on this card
+    // 2) Card‑button: create empty Task Checklist
     'card-buttons': t => [{
       text: 'Create Task Checklist',
       callback: async t => {
@@ -30,11 +30,11 @@
           `&key=${API_KEY}&token=${token}`,
           { method:'POST' }
         );
-        return t.reload(); // refresh UI so the new checklist shows
+        return t.render();  // use render(), not reload()
       }
     }],
 
-    // 3) Inject into the "…" menu on each checklist item
+    // 3) Checklist‑item menu entry
     'checklist-actions': async (t, { checklist, checkItem }) => {
       if (!checklist || checklist.name !== 'Task Checklist') return [];
       return [{
@@ -43,44 +43,44 @@
           const { id: parentId, idBoard } = await t.card('id','idBoard');
           const token = await t.get('member','private','trello_token');
 
-          // read metadata you stored when items were added (if any)
-          const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`) || {};
+          // load metadata if any
+          const meta = (await t.get('card','shared', `taskMeta-${checkItem.id}`)) || {};
 
-          // find "TASK | On the Horizon" list
+          // find target list
           const lists = await fetch(
             `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
           ).then(r=>r.json());
           const target = lists.find(l=>l.name==='TASK | On the Horizon');
           if (!target) throw new Error('On the Horizon list not found');
 
-          // create the new card, mirroring due/member if present
+          // create new card
           const params = new URLSearchParams({
             name: checkItem.name,
             idList: target.id,
-            ...(meta.due   && { due: meta.due   }),
-            ...(meta.member&& { idMembers:meta.member }),
-            ...(meta.done  && { dueComplete:meta.done  }),
+            ...(meta.due    && { due:       meta.due    }),
+            ...(meta.member && { idMembers: meta.member }),
+            ...(meta.done   && { dueComplete: meta.done }),
             key: API_KEY,
             token
           });
           const { id: newCardId } = await fetch(
             `https://api.trello.com/1/cards?${params.toString()}`,
-            { method:'POST' }
+            { method: 'POST' }
           ).then(r=>r.json());
 
-          // link via Hello Epics (if enabled)
+          // link via Hello Epics
           await fetch(
-            `https://api.helloepics.com/link?parent=${parentId}`+
+            `https://api.helloepics.com/link?parent=${parentId}` +
             `&child=${newCardId}&key=${API_KEY}&token=${token}`,
-            { method:'POST' }
+            { method: 'POST' }
           );
 
-          return t.reload();
+          return t.render(); // refresh so the menu state updates
         }
       }];
     },
 
-    // 4) allow t.render()/reload to work
+    // 4) allow re-rendering
     'on-render': t => t.render()
   });
 </script>
