@@ -10,54 +10,79 @@
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
   TrelloPowerUp.initialize({
+    // OAuth
     'authorization-status': t =>
-      t.get('member','private','trello_token')
-       .then(token=>({authorized:!!token})),
-
+      t.get('member','private','trello_token').then(tok => ({authorized:!!tok})),
     'show-authorization': t =>
-      t.popup({ title:'Authorize', url:'./authorize.html', height:150 }),
+      t.popup({title:'Authorize Power‑Up',url:'./authorize.html',height:150}),
 
+    // Card button
     'card-buttons': t=>[{
       text:'Create Task Checklist',
-      callback:t=>
-        t.popup({ title:'Create Task Checklist', url:'./client.html', height:250 })
+      callback:t=>t.popup({title:'Create Task Checklist',url:'./client.html',height:250})
     }],
 
-    'card-badges': t=>[], // stub for Hello Epics
+    // Stub front‑of‑card badges
+    'card-badges': t=>[],
 
-    'card-detail-badges': async (t,{checklist,checkItem})=>{
-      console.log('🔔 badge handler called for checklist:', checklist && checklist.name, 'item:', checkItem && checkItem.name);
-      // only show on our Task Checklist
-      if (!checklist || checklist.name !== 'Task Checklist') {
-        return [];
-      }
+    // Badge under checklist item (optional)
+    'card-detail-badges': async (t,{checklist,checkItem}) => {
+      if(!checklist||!checkItem||checklist.name!=='Task Checklist') return [];
+      return [{ text:'Create Task Card', callback: async t=>{ /* ... */ return t.reload() } }];
+    },
+
+    // **NEW**: item-ellipsis‑menu action under each checklist item
+    'checklist-actions': async (t,{checklist,checkItem}) => {
+      // only on our Task Checklist
+      if (!checklist || checklist.name !== 'Task Checklist') return [];
       return [{
-        text:'Create Task Card',
+        text: 'Convert to Task Card',
         callback: async t => {
-          // (your existing conversion logic here)
-          const {id:parentId,idBoard}=await t.card('id','idBoard');
-          const token=await t.get('member','private','trello_token');
-          const lists=await fetch(
+          const { id: parentId, idBoard } = await t.card('id','idBoard');
+          const token = await t.get('member','private','trello_token');
+
+          // pull metadata saved in client.html
+          const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`);
+          if (!meta) throw new Error('Missing task metadata');
+
+          // find “TASK | On the Horizon”
+          const lists = await fetch(
             `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
           ).then(r=>r.json());
-          const target=lists.find(l=>l.name==='TASK | On the Horizon');
-          if(!target) throw new Error('List not found');
-          const {id:newCardId}=await fetch(
-            `https://api.trello.com/1/cards?`+
-            `name=${encodeURIComponent(checkItem.name)}`+
-            `&idList=${target.id}&key=${API_KEY}&token=${token}`,
-            {method:'POST'}
+          const target = lists.find(l=>l.name==='TASK | On the Horizon');
+          if (!target) throw new Error('Target list not found');
+
+          // create child card mirroring name/due/member/done
+          const params = new URLSearchParams({
+            name: checkItem.name,
+            idList: target.id,
+            due: meta.due,
+            idMembers: meta.member,
+            dueComplete: meta.done,
+            key: API_KEY,
+            token
+          });
+          const { id: newCardId } = await fetch(
+            `https://api.trello.com/1/cards?${params.toString()}`,
+            { method:'POST' }
           ).then(r=>r.json());
+
+          // link via Hello Epics
           await fetch(
             `https://api.helloepics.com/link?parent=${parentId}`+
             `&child=${newCardId}&key=${API_KEY}&token=${token}`,
-            {method:'POST'}
+            { method:'POST' }
           );
+
+          // persist the mapping if you like
+          await t.set('card','shared',`taskCard-${checkItem.id}`, newCardId);
+
           return t.reload();
         }
       }];
     },
 
+    // re-render support
     'on-render': t=>t.render()
   });
 </script>
