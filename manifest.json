@@ -1,10 +1,10 @@
 {
   "name": "Task Card & Mirroring Power‑Up",
-  "version": "1.6.7",
+  "version": "1.6.9",
   "description": "Creates a Task Checklist and lets you convert its items into cards.",
   "connectors": {
     "iframe": {
-      "url": "https://birdieligos.github.io/trello-powerup-test/index.html?cb=1.6.7"
+      "url": "https://birdieligos.github.io/trello-powerup-test/index.html?cb=1.6.9"
     }
   },
   "capabilities": [
@@ -13,6 +13,7 @@
     "card-buttons",
     "card-badges",
     "card-detail-badges",
+    "card-back-section",
     "checklist-actions",
     "on-render"
   ],
