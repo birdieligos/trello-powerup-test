@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trello Power‑Up (1.6.6)</title>
+  <title>Trello Power‑Up (1.6.7)</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
+  // Simple logger
   function log(step, data) {
     console.groupCollapsed(`🔔 [TPU] ${step}`);
     if (data !== undefined) console.log(data);
@@ -16,88 +17,63 @@
   }
 
   TrelloPowerUp.initialize({
-    // 1. OAuth
-    'authorization-status': t => {
-      log('authorization-status');
-      return t.get('member','private','trello_token')
-        .then(tok => ({ authorized: !!tok }));
-    },
-    'show-authorization': t => {
-      log('show-authorization');
-      return t.popup({
-        title: 'Authorize Power‑Up',
-        url: './authorize.html',
-        height: 150
-      });
-    },
 
-    // 2. Card button
-    'card-buttons': t => {
-      log('card-buttons');
-      return [{
-        text: 'Create Task Checklist',
-        callback: async t => {
-          log('card-button clicked');
-          const { id: cardId } = await t.card('id');
-          log('card id', cardId);
-          const token = await t.get('member','private','trello_token');
-          log('token exists?', !!token);
+    // 1) OAuth status
+    'authorization-status': t =>
+      t.get('member','private','trello_token')
+       .then(tok => ({ authorized: !!tok })),
 
-          const res = await fetch(
-            `https://api.trello.com/1/cards/${cardId}/checklists` +
-            `?name=${encodeURIComponent('Task Checklist')}` +
-            `&key=${API_KEY}&token=${token}`,
-            { method: 'POST' }
-          );
-          const ch = await res.json();
-          log('checklist created', ch);
+    'show-authorization': t =>
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-          // tell Trello to re‑render card
-          return { refresh: true };
-        }
-      }];
-    },
+    // 2) Card button → create the checklist
+    'card-buttons': t => [{
+      text: 'Create Task Checklist',
+      callback: async t => {
+        log('Create Task Checklist clicked');
+        const { id: cardId } = await t.card('id');
+        const token = await t.get('member','private','trello_token');
+        log('cardId/token', { cardId, hasToken: !!token });
 
-    // 3. Stub front‑of‑card badges
-    'card-badges': t => {
-      log('card-badges stub');
-      return [];
-    },
+        const res = await fetch(
+          `https://api.trello.com/1/cards/${cardId}/checklists` +
+          `?name=${encodeURIComponent('Task Checklist')}` +
+          `&key=${API_KEY}&token=${token}`,
+          { method: 'POST' }
+        );
+        const checklist = await res.json();
+        log('Checklist created', checklist);
 
-    // 4. Stub detail‑of‑card badges
-    'card-detail-badges': async t => {
-      log('card-detail-badges stub');
-      return [];
-    },
-
-    // 5. Checklist‑item “…” menu action
-    'checklist-actions': async (t, { checklist, checkItem }) => {
-      log('checklist-actions', { checklist, checkItem });
-      if (!checklist || checklist.name !== 'Task Checklist') {
-        log('→ not Task Checklist, skip');
-        return [];
+        return { refresh: true };
       }
+    }],
+
+    // 3) Stub front‑of‑card badges
+    'card-badges': t => [],
+
+    // 4) Stub detail‑of‑card badges
+    'card-detail-badges': async t => [],
+
+    // 5) Checklist‑item “…” menu → Convert to Task Card
+    'checklist-actions': async (t, { checklist, checkItem }) => {
+      if (!checklist || checklist.name !== 'Task Checklist') return [];
       return [{
         text: 'Convert to Task Card',
         callback: async t => {
-          log('menu action clicked', checkItem.name);
+          log('Convert to Task Card clicked', checkItem.name);
 
           const { id: parentId, idBoard } = await t.card('id','idBoard');
-          log('parent/cardBoard IDs', { parentId, idBoard });
           const token = await t.get('member','private','trello_token');
-          log('token exists?', !!token);
+          log('parentId/idBoard/token', { parentId, idBoard, hasToken: !!token });
 
           const meta = await t.get('card','shared', `taskMeta-${checkItem.id}`) || {};
-          log('item metadata', meta);
+          log('Loaded metadata', meta);
 
           const lists = await fetch(
             `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
           ).then(r => r.json());
-          log('lists', lists.map(l => l.name));
-
           const target = lists.find(l => l.name === 'TASK | On the Horizon');
-          log('target list', target);
-          if (!target) throw new Error('TASK | On the Horizon not found');
+          log('Found target list', target);
 
           const params = new URLSearchParams({
             name: checkItem.name,
@@ -108,34 +84,31 @@
             key: API_KEY,
             token
           });
-          log('create card params', params.toString());
+          log('Creating child card with params', params.toString());
 
           const newCard = await fetch(
             `https://api.trello.com/1/cards?${params.toString()}`,
             { method: 'POST' }
           ).then(r => r.json());
-          log('new card', newCard);
+          log('Child card created', newCard);
 
           await fetch(
             `https://api.helloepics.com/link?parent=${parentId}` +
             `&child=${newCard.id}&key=${API_KEY}&token=${token}`,
             { method: 'POST' }
           );
-          log('linked epic', { parentId, child: newCard.id });
+          log('Linked in Hello Epics', { parentId, child: newCard.id });
 
           await t.set('card','shared', `taskCard-${checkItem.id}`, newCard.id);
-          log('stored mapping', newCard.id);
+          log('Saved mapping', newCard.id);
 
           return { refresh: true };
         }
       }];
     },
 
-    // 6. Allow UI refresh after our callbacks
-    'on-render': t => {
-      log('on-render');
-      return t.render();
-    }
+    // 6) on-render → allow Trello to redraw
+    'on-render': t => t.render()
   });
 
   log('TPU initialized');
