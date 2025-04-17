@@ -6,47 +6,45 @@
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      TrelloPowerUp.initialize({
-
-        // Authorization check
-        'authorization-status': function (t) {
-          return t.get('member', 'private', 'trello_token')
-            .then(token => ({ authorized: !!token }));
-        },
-
-        // Show authorization prompt
-        'show-authorization': function (t) {
-          return t.popup({
-            title: 'Authorize Power-Up',
-            url: './authorize.html',
-            height: 150
-          });
-        },
-
-        // Always show "Create Task Checklist"
-        'card-buttons': function (t) {
-          return [{
-            text: 'Create Task Checklist',
-            callback: function (t) {
-              return t.popup({
-                title: 'Create Task Checklist',
-                url: './client.html',
-                height: 250
-              });
-            }
-          }];
-        },
-
-        // Remove card-detail-badges entirely
-
-        // Optional: run when iframe renders
-        'onRender': function (t) {
-          return t.render();
-        }
-      });
+<script>
+  const API_KEY='7443867af11d32c3e8f8152b114201fd';
+  document.addEventListener('DOMContentLoaded',()=>{
+    TrelloPowerUp.initialize({
+      'authorization-status': t=>
+        t.get('member','private','trello_token')
+         .then(token=>({authorized:!!token})),
+      'show-authorization': t=>
+        t.popup({title:'Authorize Power-Up',url:'./authorize.html',height:150}),
+      'card-buttons': t=>[{
+        text:'Create Task Checklist',
+        callback:t=>t.popup({title:'Create Task Checklist',url:'./client.html',height:250})
+      }],
+      'card-detail-badges': async (t,{checklist,checkItem})=>{
+        if(!checklist||!checkItem) return [];
+        return [{
+          text:'Create Task Card',
+          callback: async t=>{
+            const {id:idCard,idBoard}=await t.card('id','idBoard');
+            const token=await t.get('member','private','trello_token');
+            const lists=await fetch(
+              `https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`
+            ).then(r=>r.json());
+            const target=lists.find(l=>l.name==='TASK | On the Horizon');
+            if(!target) throw new Error('Task list not found');
+            await fetch(
+              `https://api.trello.com/1/cards?`+
+              `name=${encodeURIComponent(checkItem.name)}`+
+              `&idList=${target.id}`+
+              `&key=${API_KEY}&token=${token}`,
+              {method:'POST'}
+            );
+            return t.reload();
+          }
+        }];
+      },
+      'onRender': t=>t.render()
     });
-  </script>
+  });
+</script>
 </body>
 </html>
