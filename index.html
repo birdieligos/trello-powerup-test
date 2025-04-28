@@ -2,36 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trello Power-Up: Task Checklist (v2.0)</title>
+  <title>Trello Power‑Up: Task Checklist (v2.0)</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
-  console.log('🔔 [TPU] script loaded v2.0');
 
   TrelloPowerUp.initialize({
-    // OAuth
     'authorization-status': t =>
-      t.get('member', 'private', 'trello_token')
-       .then(token => ({ authorized: !!token })),
+      t.get('member','private','trello_token')
+       .then(tok => ({ authorized: !!tok })),
     'show-authorization': t =>
       t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    // Card button: Open custom Task Checklist UI
     'card-buttons': t => [{
-      text: 'Open Task Checklist',
-      callback: t => 
-        t.popup({
-          title: 'Task Checklist',
-          url: './client.html',
-          height: 600  // taller now because we'll build a bigger UI
-        })
+      text: 'Create Task Checklist',
+      callback: t => t.popup({
+        title: 'Task Checklist',
+        url: './client.html',
+        height: 500
+      })
     }],
 
-    // (Optional) Stubs to avoid Trello timeout warnings
-    'card-badges':       () => [],
-    'card-back-section': () => []
+    'card-badges': t => [],
+    'card-back-section': t => []
   });
 </script>
 </body>
