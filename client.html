@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Task Checklist Manager</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <style>
+    .checklist { border: 1px solid #ccc; padding: 10px; }
+    .checklist-title { font-weight: bold; margin-bottom: 10px; }
+    .checklist-items { list-style: none; padding: 0; }
+    .checklist-item { display: flex; align-items: center; margin-bottom: 8px; gap: 5px; }
+    .item-text, .item-due, .item-member { padding: 5px; }
+    .item-text { width: 150px; }
+    .item-due { width: 130px; }
+    .item-member { width: 100px; }
+    .item-actions button { margin-left: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="checklist">
+  <h3 class="checklist-title">Task Checklist</h3>
+  <ul id="checklist-items" class="checklist-items">
+    <!-- Task items will be dynamically added here -->
+  </ul>
+  <button id="add-task-btn">➕ Add New Task</button>
+</div>
+
+<script>
+const t = TrelloPowerUp.iframe();
+
+// Handle adding new tasks dynamically
+document.getElementById('add-task-btn').addEventListener('click', addTaskItem);
+
+function addTaskItem() {
+  const ul = document.getElementById('checklist-items');
+  const li = document.createElement('li');
+  li.className = 'checklist-item';
+  li.innerHTML = `
+    <input type="text" class="item-text" placeholder="Task Title" required>
+    <input type="date" class="item-due" required>
+    <input type="text" class="item-member" placeholder="Member ID" required>
+    <div class="item-actions">
+      <button onclick="createTaskCard(this)">Create Task Card</button>
+      <button onclick="deleteTaskItem(this)">Delete</button>
+    </div>
+  `;
+  ul.appendChild(li);
+}
+
+// Handle deleting a task
+function deleteTaskItem(button) {
+  const li = button.closest('li');
+  li.remove();
+}
+
+// Handle creating a Task Card (will fill this function next)
+function createTaskCard(button) {
+  const li = button.closest('li');
+  const taskName = li.querySelector('.item-text').value.trim();
+  const dueDate = li.querySelector('.item-due').value;
+  const memberId = li.querySelector('.item-member').value.trim();
+
+  if (!taskName || !dueDate || !memberId) {
+    alert('❗ Member and Due Date must be assigned to create a task card.');
+    return;
+  }
+
+  // TODO: Connect to Trello API to create the card!
+  console.log('Creating Task Card for:', { taskName, dueDate, memberId });
+}
+</script>
+
+</body>
+</html>
