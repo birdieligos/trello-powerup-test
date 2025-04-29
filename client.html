@@ -5,14 +5,8 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 10px;
-    }
-    .task-list {
-      list-style: none;
-      padding: 0;
-    }
+    body { font-family: sans-serif; padding: 10px; }
+    .task-list { list-style: none; padding: 0; }
     .task-item {
       display: flex;
       align-items: center;
@@ -41,14 +35,11 @@
       align-items: center;
       gap: 4px;
     }
-    .three-dots {
-      font-size: 18px;
-      padding: 5px 8px;
-    }
+    .three-dots { font-size: 18px; padding: 5px 8px; }
     .add-task-btn {
       margin-top: 10px;
       padding: 10px;
-      background: #026aa7;
+      background-color: #026aa7;
       color: white;
       font-weight: bold;
       border: none;
@@ -74,10 +65,14 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 
 async function fetchMembers() {
-  const board = await t.board('id');
-  const token = await t.get('member', 'private', 'trello_token');
-  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-  members = await res.json();
+  try {
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'trello_token');
+    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+    members = await res.json();
+  } catch (e) {
+    console.error('Error fetching members', e);
+  }
 }
 
 function createTaskItem() {
@@ -96,25 +91,26 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-  setDateBtn.addEventListener('click', () => {
+  setDateBtn.addEventListener('click', (e) => {
     t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      args: {}, // pass context if needed
+      title: 'Pick Due Date',
+      url: './date-picker.html',
+      height: 200,
+      mouseEvent: e
     }).then(selected => {
-      if (selected) {
-        setDateBtn.innerHTML = `🕑 ${selected}`;
+      if (selected && selected.date) {
+        setDateBtn.innerHTML = `🕑 ${selected.date}`;
       }
     });
   });
 
-  assignBtn.addEventListener('click', () => {
+  assignBtn.addEventListener('click', (e) => {
     t.popup({
       title: 'Assign Member',
-      url: 'member-picker.html',
+      url: './member-picker.html',
       height: 300,
-      args: { members },
+      mouseEvent: e,
+      args: { members }
     }).then(selected => {
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
@@ -151,7 +147,9 @@ function createTaskItem() {
 
 document.getElementById('add-task').addEventListener('click', createTaskItem);
 document.addEventListener('DOMContentLoaded', fetchMembers);
+
 t.render(() => {});
 </script>
+
 </body>
 </html>
