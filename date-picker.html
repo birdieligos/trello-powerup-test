@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Select Due Date</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body style="font-family:sans-serif;padding:10px">
+  <input id="date-input" type="date" style="width:100%;padding:6px;font-size:14px" />
+  <script>
+    const t = TrelloPowerUp.iframe();
+
+    const input = document.getElementById('date-input');
+    input.valueAsDate = new Date();
+
+    input.addEventListener('change', () => {
+      const val = new Date(input.value);
+      const formatted = val.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      t.closePopup();
+      t.notifyParent(formatted);
+    });
+  </script>
+</body>
+</html>
