@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Task Checklist Power-Up</title>
+  <title>Trello Power‑Up: Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -12,17 +12,13 @@
   TrelloPowerUp.initialize({
 
     'authorization-status': t =>
-      t.get('member', 'private', 'trello_token')
+      t.get('member','private','trello_token')
        .then(token => ({ authorized: !!token })),
 
     'show-authorization': t =>
-      t.popup({
-        title: 'Authorize',
-        url: './authorize.html',
-        height: 140
-      }),
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    'card-back-section': function(t, options) {
+    'card-back-section': function(t) {
       return {
         title: 'Task Checklist',
         icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
@@ -34,11 +30,11 @@
       };
     },
 
+    // These are required to suppress Trello warnings
     'card-buttons': t => [],
-    'card-badges': t => [],
+    'card-badges':  t => [],
+    'card-detail-badges': t => [],
     'attachment-sections': t => [],
-    'card-detail-badges': t => []
-
   });
 </script>
 </body>
