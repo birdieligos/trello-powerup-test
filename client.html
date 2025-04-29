@@ -80,7 +80,6 @@ function createTaskItem(task = {}) {
   });
 
   setDateBtn.addEventListener('click', (e) => {
-    console.log('📆 Set Date clicked');
     t.popup({
       title: 'Select Due Date',
       url: 'date-picker.html',
@@ -93,12 +92,11 @@ function createTaskItem(task = {}) {
         saveChecklist();
       }
     }).catch(err => {
-      console.error('❌ Date popup error:', err);
+      console.error('❌ Error in date popup:', err);
     });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Assign Member clicked');
     t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -112,7 +110,7 @@ function createTaskItem(task = {}) {
         saveChecklist();
       }
     }).catch(err => {
-      console.error('❌ Member popup error:', err);
+      console.error('❌ Error in member popup:', err);
     });
   });
 
@@ -147,25 +145,28 @@ function createTaskItem(task = {}) {
 
 async function loadChecklist() {
   const saved = await t.get('card', 'shared', 'taskChecklist');
-  if (saved && Array.isArray(saved)) {
+  if (saved && Array.isArray(saved) && saved.length > 0) {
     checklistData = saved;
     checklistData.forEach(task => createTaskItem(task));
+  } else {
+    checklistData = [];
   }
 }
 
 document.getElementById('add-task').addEventListener('click', () => {
+  console.log('➕ Add New Task clicked');
   const task = { name: '', dueDate: '', memberAvatar: '' };
   checklistData.push(task);
   createTaskItem(task);
   saveChecklist();
 });
 
-t.render(() => {
+t.render(async function() {
   console.log('🔄 t.render called');
-  fetchMembers()
-    .then(loadChecklist)
-    .catch(err => console.error('❌ Failed during fetchMembers/loadChecklist', err));
+  await fetchMembers();
+  await loadChecklist();
 });
+</script>
 
 </body>
 </html>
