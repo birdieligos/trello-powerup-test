@@ -44,112 +44,131 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let savedTasks = [];
 
 async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
-  } catch (err) {
-    console.error('❌ Error fetching members:', err);
-  }
+  const board = await t.board('id');
+  const token = await t.get('member', 'private', 'trello_token');
+  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+  members = await res.json();
 }
 
-function renderTask(task, index) {
+function renderChecklist(items) {
   const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
+  taskList.innerHTML = '';
+  items.forEach(({ text, date, member }) => {
+    const li = document.createElement('li');
+    li.className = 'task-item';
 
-  li.innerHTML = `
-    <input type="text" class="task-name" placeholder="Task name..." value="${task.name || ''}" />
-    <button class="set-date"><span>🕑</span>${task.date || 'Set Date'}</button>
-    <button class="assign-member">
-      ${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '<span>👤</span>Assign'}
-    </button>
-    <button class="three-dots">&#x22EE;</button>
-  `;
-
-  const nameInput = li.querySelector('.task-name');
-  const setDateBtn = li.querySelector('.set-date');
-  const assignBtn = li.querySelector('.assign-member');
-  const threeDots = li.querySelector('.three-dots');
-
-  nameInput.addEventListener('input', () => {
-    savedTasks[index].name = nameInput.value;
-    t.set('card', 'shared', { checklist: savedTasks });
-  });
-
-  setDateBtn.addEventListener('click', (e) => {
-    t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      mouseEvent: e
-    }).then(selected => {
-      if (selected) {
-        savedTasks[index].date = selected;
-        setDateBtn.innerHTML = `🕑 ${selected}`;
-        t.set('card', 'shared', { checklist: savedTasks });
-      }
+    const dateBtn = document.createElement('button');
+    dateBtn.className = 'set-date';
+    dateBtn.innerHTML = date ? `🕑 ${date}` : '🕑 Set Date';
+    dateBtn.addEventListener('click', (e) => {
+      t.popup({
+        title: 'Select Due Date',
+        url: 'date-picker.html',
+        height: 130,
+        mouseEvent: e
+      }).then(selected => {
+        if (selected) {
+          dateBtn.innerHTML = `🕑 ${selected}`;
+          saveChecklist();
+        }
+      });
     });
-  });
 
-  assignBtn.addEventListener('click', (e) => {
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members },
-      mouseEvent: e
-    }).then(selected => {
-      if (selected && selected.avatar) {
-        savedTasks[index].memberId = selected.id;
-        savedTasks[index].memberAvatar = selected.avatar;
-        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-        t.set('card', 'shared', { checklist: savedTasks });
-      }
+    const memberBtn = document.createElement('button');
+    memberBtn.className = 'assign-member';
+    if (member && member.avatar) {
+      memberBtn.innerHTML = `<img src="${member.avatar}" class="member-avatar" />`;
+    } else {
+      memberBtn.innerHTML = '👤 Assign';
+    }
+    memberBtn.addEventListener('click', (e) => {
+      t.popup({
+        title: 'Assign Member',
+        url: 'member-picker.html',
+        height: 300,
+        args: { members },
+        mouseEvent: e
+      }).then(selected => {
+        if (selected && selected.avatar) {
+          memberBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+          memberBtn.dataset.avatar = selected.avatar;
+          saveChecklist();
+        }
+      });
     });
-  });
 
-  threeDots.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const menu = document.createElement('div');
-    menu.className = 'action-menu';
-    const deleteOption = document.createElement('div');
-    deleteOption.textContent = 'Delete Task';
-    deleteOption.addEventListener('click', () => {
-      savedTasks.splice(index, 1);
-      t.set('card', 'shared', { checklist: savedTasks });
-      li.remove();
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'task-name';
+    nameInput.value = text || '';
+    nameInput.placeholder = 'Task name...';
+    nameInput.addEventListener('change', saveChecklist);
+
+    const dots = document.createElement('button');
+    dots.className = 'three-dots';
+    dots.innerHTML = '&#x22EE;';
+    dots.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const menu = document.createElement('div');
+      menu.className = 'action-menu';
+      const del = document.createElement('div');
+      del.textContent = 'Delete Task';
+      del.addEventListener('click', () => {
+        li.remove();
+        saveChecklist();
+      });
+      menu.appendChild(del);
+      document.body.appendChild(menu);
+      const rect = dots.getBoundingClientRect();
+      menu.style.position = 'absolute';
+      menu.style.top = rect.bottom + 'px';
+      menu.style.left = rect.left + 'px';
     });
-    menu.appendChild(deleteOption);
-    document.body.appendChild(menu);
-    const rect = threeDots.getBoundingClientRect();
-    menu.style.position = 'absolute';
-    menu.style.top = rect.bottom + 'px';
-    menu.style.left = rect.left + 'px';
-  });
 
-  taskList.appendChild(li);
+    li.appendChild(nameInput);
+    li.appendChild(dateBtn);
+    li.appendChild(memberBtn);
+    li.appendChild(dots);
+    taskList.appendChild(li);
+  });
 }
 
-function addNewTask() {
-  const task = { name: '', date: '', memberId: '', memberAvatar: '' };
-  const index = savedTasks.length;
-  savedTasks.push(task);
-  t.set('card', 'shared', { checklist: savedTasks });
-  renderTask(task, index);
+async function saveChecklist() {
+  const items = Array.from(document.querySelectorAll('.task-item')).map(li => {
+    return {
+      text: li.querySelector('.task-name').value,
+      date: li.querySelector('.set-date').textContent.replace('🕑 ', '').trim(),
+      member: {
+        avatar: li.querySelector('.assign-member img')?.src || ''
+      }
+    };
+  });
+  await t.set('card', 'shared', 'checklist', items);
 }
 
-document.getElementById('add-task').addEventListener('click', addNewTask);
+async function loadChecklist() {
+  const items = await t.get('card', 'shared', 'checklist') || [];
+  renderChecklist(items);
+}
+
+document.getElementById('add-task').addEventListener('click', () => {
+  const items = Array.from(document.querySelectorAll('.task-item')).map(li => ({
+    text: li.querySelector('.task-name').value,
+    date: li.querySelector('.set-date').textContent.replace('🕑 ', '').trim(),
+    member: {
+      avatar: li.querySelector('.assign-member img')?.src || ''
+    }
+  }));
+  items.push({ text: '', date: '', member: null });
+  renderChecklist(items);
+  saveChecklist();
+});
 
 t.render(async () => {
   await fetchMembers();
-  const data = await t.get('card', 'shared', 'checklist');
-  savedTasks = Array.isArray(data) ? data : [];
-  savedTasks.forEach(renderTask);
+  await loadChecklist();
 });
 </script>
 </body>
