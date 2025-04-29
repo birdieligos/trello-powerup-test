@@ -42,42 +42,31 @@
 <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
 <script>
-const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = [];
 
 async function fetchMembers() {
+  const t = TrelloPowerUp.iframe();
   const board = await t.board('id');
   const token = await t.get('member', 'private', 'trello_token');
   const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
   members = await res.json();
 }
 
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
-
-function createTaskItem(task = {}) {
+function createTaskItem() {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
 
   li.innerHTML = `
-    <input type="text" class="task-name" placeholder="Task name..." value="${task.name || ''}" />
-    <button class="set-date">${task.dueDate ? `🕑 ${task.dueDate}` : '<span>🕑</span>Set Date'}</button>
-    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '<span>👤</span>Assign'}</button>
+    <input type="text" class="task-name" placeholder="Task name..." />
+    <button class="set-date"><span>🕑</span>Set Date</button>
+    <button class="assign-member"><span>👤</span>Assign</button>
     <button class="three-dots">&#x22EE;</button>
   `;
 
-  const taskNameInput = li.querySelector('.task-name');
   const setDateBtn = li.querySelector('.set-date');
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
-
-  taskNameInput.addEventListener('input', () => {
-    task.name = taskNameInput.value;
-    saveChecklist();
-  });
 
   setDateBtn.addEventListener('click', (e) => {
     const t = TrelloPowerUp.iframe();
@@ -90,8 +79,6 @@ function createTaskItem(task = {}) {
     }).then(selected => {
       if (selected) {
         setDateBtn.innerHTML = `🕑 ${selected}`;
-        task.dueDate = selected;
-        saveChecklist();
       }
     }).catch(err => {
       console.error('❌ Error in date popup:', err);
@@ -110,8 +97,6 @@ function createTaskItem(task = {}) {
     }).then(selected => {
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-        task.memberAvatar = selected.avatar;
-        saveChecklist();
       }
     }).catch(err => {
       console.error('❌ Error in member popup:', err);
@@ -132,8 +117,6 @@ function createTaskItem(task = {}) {
     deleteOption.textContent = 'Delete Task';
     deleteOption.addEventListener('click', () => {
       li.remove();
-      checklistData = checklistData.filter(t => t !== task);
-      saveChecklist();
     });
     menu.appendChild(createOption);
     menu.appendChild(deleteOption);
@@ -147,29 +130,8 @@ function createTaskItem(task = {}) {
   taskList.appendChild(li);
 }
 
-async function loadChecklist() {
-  const saved = await t.get('card', 'shared', 'taskChecklist');
-  if (saved && Array.isArray(saved)) {
-    checklistData = saved;
-    checklistData.forEach(task => createTaskItem(task));
-  }
-}
-
-document.getElementById('add-task').addEventListener('click', () => {
-  console.log('➕ Add New Task clicked');
-  const task = { name: '', dueDate: '', memberAvatar: '' };
-  checklistData.push(task);
-  createTaskItem(task);
-  saveChecklist();
-});
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await fetchMembers();
-  await loadChecklist();
-});
-
-t.render(() => {});
+document.getElementById('add-task').addEventListener('click', createTaskItem);
+document.addEventListener('DOMContentLoaded', fetchMembers);
 </script>
-
 </body>
 </html>
