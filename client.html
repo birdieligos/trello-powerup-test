@@ -23,29 +23,20 @@
       padding: 8px;
       border-radius: 4px;
     }
-    .task-left {
+    .task-content {
       display: flex;
       flex-direction: column;
     }
-    .task-input {
-      font-size: 14px;
-      padding: 5px;
-      width: 200px;
-      border: none;
-      background: transparent;
-      border-bottom: 1px solid #ccc;
-    }
     .task-meta {
+      display: flex;
+      gap: 12px;
       font-size: 12px;
       color: #555;
-      display: flex;
-      gap: 10px;
-      margin-top: 4px;
+      margin-top: 5px;
     }
-    .clickable {
+    .meta-field {
       cursor: pointer;
       text-decoration: underline;
-      color: #0079bf;
     }
     .task-actions {
       position: relative;
@@ -74,7 +65,7 @@
     }
     .add-task-btn {
       margin-top: 10px;
-      padding: 8px;
+      padding: 10px;
       background-color: #026aa7;
       color: white;
       border: none;
@@ -82,6 +73,15 @@
       font-weight: bold;
       cursor: pointer;
       width: 100%;
+    }
+    input.task-input {
+      font-size: 14px;
+      padding: 5px;
+      border: none;
+      background: transparent;
+      border-bottom: 1px solid #ccc;
+      margin-bottom: 2px;
+      width: 220px;
     }
   </style>
 </head>
@@ -92,19 +92,29 @@
 
   <script>
     const t = TrelloPowerUp.iframe();
+    const TASK_KEY = 'taskChecklist';
 
-    document.getElementById('add-task').addEventListener('click', () => {
-      const taskList = document.getElementById('task-list');
+    function saveTasks() {
+      const tasks = [];
+      document.querySelectorAll('.task-item').forEach(item => {
+        tasks.push({
+          name: item.querySelector('.task-input').value.trim(),
+          due: item.querySelector('.due-date').textContent.replace('Due: ', ''),
+          member: item.querySelector('.member-name').textContent.replace('Member: ', '')
+        });
+      });
+      t.set('card', 'shared', TASK_KEY, tasks);
+    }
 
+    function renderTask(task = {}) {
       const li = document.createElement('li');
       li.className = 'task-item';
-
       li.innerHTML = `
-        <div class="task-left">
-          <input type="text" placeholder="Task name..." class="task-input">
+        <div class="task-content">
+          <input type="text" placeholder="Task name..." class="task-input" value="${task.name || ''}">
           <div class="task-meta">
-            <span class="due clickable">(click to set Due Date)</span>
-            <span class="member clickable">(click to set Member)</span>
+            <span class="due-date meta-field">Due: ${task.due || '(click to set)'}</span> | 
+            <span class="member-name meta-field">Member: ${task.member || '(click to set)'}</span>
           </div>
         </div>
         <div class="task-actions">
@@ -116,58 +126,68 @@
         </div>
       `;
 
-      const threeDots = li.querySelector('.three-dots');
-      const actionMenu = li.querySelector('.action-menu');
+      const taskList = document.getElementById('task-list');
+      taskList.appendChild(li);
 
-      threeDots.addEventListener('click', (e) => {
+      li.querySelector('.three-dots').addEventListener('click', (e) => {
         e.stopPropagation();
         document.querySelectorAll('.action-menu').forEach(menu => {
-          if (menu !== actionMenu) menu.style.display = 'none';
+          if (menu !== li.querySelector('.action-menu')) menu.style.display = 'none';
         });
-        actionMenu.style.display = actionMenu.style.display === 'block' ? 'none' : 'block';
-      });
-
-      li.querySelector('.create-task-card').addEventListener('click', async () => {
-        const taskName = li.querySelector('.task-input').value.trim();
-        if (!taskName) {
-          alert('Task name is required before creating.');
-          return;
-        }
-        alert('✅ Task card would be created here (API call next)');
-        actionMenu.style.display = 'none';
+        const menu = li.querySelector('.action-menu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
       });
 
       li.querySelector('.delete-task').addEventListener('click', () => {
         li.remove();
+        saveTasks();
       });
 
-      // Add listener for setting due date
-      li.querySelector('.due').addEventListener('click', () => {
-        const dueInput = prompt('Enter Due Date (YYYY-MM-DD)');
-        if (dueInput) {
-          li.querySelector('.due').textContent = `Due: ${dueInput}`;
+      li.querySelector('.create-task-card').addEventListener('click', async () => {
+        const taskName = li.querySelector('.task-input').value.trim();
+        const dueDate = li.querySelector('.due-date').textContent.replace('Due: ', '');
+        const member = li.querySelector('.member-name').textContent.replace('Member: ', '');
+        if (!taskName || dueDate.includes('click') || member.includes('click')) {
+          alert('Please fill out Task Name, Due Date, and Member before creating.');
+          return;
+        }
+        alert(`✅ Would create task card: "${taskName}" here (API call next)`);
+        li.querySelector('.action-menu').style.display = 'none';
+      });
+
+      li.querySelector('.task-input').addEventListener('blur', saveTasks);
+      li.querySelector('.due-date').addEventListener('click', () => {
+        const newDue = prompt('Enter Due Date (YYYY-MM-DD)');
+        if (newDue) {
+          li.querySelector('.due-date').textContent = `Due: ${newDue}`;
+          saveTasks();
         }
       });
-
-      // Add listener for setting member
-      li.querySelector('.member').addEventListener('click', () => {
-        const memberInput = prompt('Enter Member Name');
-        if (memberInput) {
-          li.querySelector('.member').textContent = `Member: ${memberInput}`;
+      li.querySelector('.member-name').addEventListener('click', () => {
+        const newMember = prompt('Enter Member Name');
+        if (newMember) {
+          li.querySelector('.member-name').textContent = `Member: ${newMember}`;
+          saveTasks();
         }
       });
+    }
 
-      taskList.appendChild(li);
+    document.getElementById('add-task').addEventListener('click', () => {
+      renderTask();
+      saveTasks();
     });
 
     document.addEventListener('click', () => {
-      document.querySelectorAll('.action-menu').forEach(menu => {
-        menu.style.display = 'none';
-      });
+      document.querySelectorAll('.action-menu').forEach(menu => menu.style.display = 'none');
     });
 
     t.render(function(){
-      // Ready to rerender if Trello requests
+      t.get('card', 'shared', TASK_KEY).then(function(tasks){
+        if (tasks && tasks.length) {
+          document.getElementById('task-list').innerHTML = '';
+          tasks.forEach(task => renderTask(task));
+        }
+      });
     });
   </script>
 
