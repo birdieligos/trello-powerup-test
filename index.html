@@ -1,41 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Trello Power‑Up: Task Checklist</title>
+  <meta charset="UTF-8">
+  <title>Task Checklist Power-Up</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
-  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
+const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-  TrelloPowerUp.initialize({
+TrelloPowerUp.initialize({
 
-    'authorization-status': t =>
-      t.get('member','private','trello_token')
-       .then(token => ({ authorized: !!token })),
+  'authorization-status': t =>
+    t.get('member','private','trello_token')
+     .then(token => ({ authorized: !!token })),
 
-    'show-authorization': t =>
-      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+  'show-authorization': t =>
+    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    'card-back-section': function(t) {
-      return {
-        title: 'Task Checklist',
-        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-        content: {
-          type: 'iframe',
-          url: t.signUrl('./client.html'),
-          height: 500
-        }
-      };
-    },
+  'card-back-section': t => ({
+    title: 'Task Checklist',
+    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+    content: {
+      type: 'iframe',
+      url: t.signUrl('./client.html'),
+      height: 400
+    }
+  }),
 
-    // These are required to suppress Trello warnings
-    'card-buttons': t => [],
-    'card-badges':  t => [],
-    'card-detail-badges': t => [],
-    'attachment-sections': t => [],
-  });
+  // We are not using them yet but MUST stub them
+  'card-buttons': t => [],
+  'card-badges': t => [],
+  'attachment-sections': t => [],
+  'card-detail-badges': t => [],
+
+  'popup': t => {
+    return []; // popup stubs (handled automatically by t.popup inside client)
+  },
+
+  'on-enable': t => {
+    console.log('✅ Power-Up enabled');
+  },
+  'on-disable': t => {
+    console.log('🚫 Power-Up disabled');
+  }
+
+});
 </script>
 </body>
 </html>
