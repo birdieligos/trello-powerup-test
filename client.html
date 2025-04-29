@@ -80,8 +80,7 @@ function createTaskItem(task = {}) {
   });
 
   setDateBtn.addEventListener('click', (e) => {
-    const t = TrelloPowerUp.iframe();
-    console.log('📆 Set Date button clicked');
+    console.log('📆 Set Date clicked');
     t.popup({
       title: 'Select Due Date',
       url: 'date-picker.html',
@@ -94,13 +93,12 @@ function createTaskItem(task = {}) {
         saveChecklist();
       }
     }).catch(err => {
-      console.error('❌ Error in date popup:', err);
+      console.error('❌ Date popup error:', err);
     });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    const t = TrelloPowerUp.iframe();
-    console.log('👤 Assign Member button clicked');
+    console.log('👤 Assign Member clicked');
     t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -114,7 +112,7 @@ function createTaskItem(task = {}) {
         saveChecklist();
       }
     }).catch(err => {
-      console.error('❌ Error in member popup:', err);
+      console.error('❌ Member popup error:', err);
     });
   });
 
@@ -156,7 +154,6 @@ async function loadChecklist() {
 }
 
 document.getElementById('add-task').addEventListener('click', () => {
-  console.log('➕ Add New Task clicked');
   const task = { name: '', dueDate: '', memberAvatar: '' };
   checklistData.push(task);
   createTaskItem(task);
@@ -167,8 +164,8 @@ t.render(async function() {
   console.log('🔄 t.render called');
   await fetchMembers();
   await loadChecklist();
+  await t.sizeTo('#task-list');
 });
-
 </script>
 
 </body>
