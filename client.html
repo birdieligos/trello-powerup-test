@@ -2,115 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Task Checklist Section</title>
+  <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
       padding: 10px;
     }
-    .checklist-container {
-      padding: 10px;
-    }
-    .task {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #ddd;
-      padding: 8px 0;
-    }
-    .task-name {
-      font-weight: 500;
-    }
-    .task-options {
-      cursor: pointer;
-      font-size: 18px;
-    }
-    .add-task {
+    .task-checklist {
       margin-top: 10px;
-      padding: 8px 12px;
+    }
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .task-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .task-actions {
+      cursor: pointer;
+      padding: 5px;
+    }
+    .add-task-btn {
+      margin-top: 10px;
+      padding: 8px;
       background-color: #026AA7;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
     }
+    .task-name {
+      font-weight: bold;
+    }
+    .task-meta {
+      font-size: 12px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
-  <div class="checklist-container">
-    <h3>Task Checklist</h3>
-    <div id="task-list"></div>
-    <button class="add-task" id="add-task-btn">+ Add New Task</button>
-  </div>
+<div class="task-checklist">
+  <div id="task-list"></div>
+  <button id="add-task" class="add-task-btn">+ Add New Task</button>
+</div>
 
-  <script>
-    const t = TrelloPowerUp.iframe();
-    const taskList = document.getElementById('task-list');
+<script>
+const t = TrelloPowerUp.iframe();
+const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-    async function loadTasks() {
-      const tasks = await t.get('card', 'shared', 'taskChecklist') || [];
-      taskList.innerHTML = '';
-      tasks.forEach(renderTask);
-    }
+async function getUserToken() {
+  const token = await t.get('member', 'private', 'trello_token');
+  if (!token) throw new Error('User not authorized');
+  return token;
+}
 
-    function renderTask(taskText) {
-      const div = document.createElement('div');
-      div.className = 'task';
-      div.innerHTML = `
-        <div class="task-name">${taskText}</div>
-        <div class="task-options">&#x22EE;</div>
-      `;
-      div.querySelector('.task-options').addEventListener('click', () => {
-        const choice = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
-        if (choice === 'create') {
-          createTaskCard(taskText);
-        } else if (choice === 'delete') {
-          deleteTask(taskText);
+function renderChecklist(tasks) {
+  const list = document.getElementById('task-list');
+  list.innerHTML = '';
+  tasks.forEach((task, idx) => {
+    const div = document.createElement('div');
+    div.className = 'task-item';
+    div.innerHTML = `
+      <div class="task-info">
+        <div class="task-name">${task.name}</div>
+        <div class="task-meta">Due: ${task.due || 'None'} | Member: ${task.member || 'None'}</div>
+      </div>
+      <div class="task-actions" data-idx="${idx}">&#x22EE;</div>
+    `;
+    list.appendChild(div);
+
+    div.querySelector('.task-actions').addEventListener('click', async e => {
+      const action = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
+      if (action === 'create') {
+        if (!task.due || !task.member) {
+          alert('Task must have Date and Member assigned to create card.');
+          return;
         }
-      });
-      taskList.appendChild(div);
-    }
+        const { id: parentId, idBoard } = await t.card('id', 'idBoard');
+        const token = await getUserToken();
 
-    async function createTaskCard(name) {
-      const { idBoard } = await t.card('idBoard');
-      const token = await t.get('member', 'private', 'trello_token');
-      const lists = await fetch(`https://api.trello.com/1/boards/${idBoard}/lists?key=7443867af11d32c3e8f8152b114201fd&token=${token}`)
-        .then(res => res.json());
-      const targetList = lists.find(l => l.name.includes('TASK | On the Horizon'));
-      if (!targetList) return alert('Target list not found');
+        const lists = await fetch(`https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`)
+          .then(r => r.json());
+        const targetList = lists.find(l => l.name === 'TASK | On the Horizon');
+        if (!targetList) throw new Error('TASK | On the Horizon list not found');
 
-      await fetch(`https://api.trello.com/1/cards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name,
+        const params = new URLSearchParams({
+          name: task.name,
           idList: targetList.id,
-          key: '7443867af11d32c3e8f8152b114201fd',
-          token: token
-        })
-      });
-      alert('Task Card Created!');
-    }
+          due: task.due,
+          idMembers: task.member,
+          key: API_KEY,
+          token
+        });
 
-    async function deleteTask(taskText) {
-      let tasks = await t.get('card', 'shared', 'taskChecklist') || [];
-      tasks = tasks.filter(task => task !== taskText);
-      await t.set('card', 'shared', 'taskChecklist', tasks);
-      loadTasks();
-    }
+        const card = await fetch(`https://api.trello.com/1/cards?${params.toString()}`, { method: 'POST' })
+          .then(r => r.json());
 
-    document.getElementById('add-task-btn').addEventListener('click', async () => {
-      const taskName = prompt('Enter Task Name');
-      if (!taskName) return;
-      const tasks = await t.get('card', 'shared', 'taskChecklist') || [];
-      tasks.push(taskName);
-      await t.set('card', 'shared', 'taskChecklist', tasks);
-      loadTasks();
+        // Link Parent-Child via Hello Epics
+        await fetch(`https://api.helloepics.com/link?parent=${parentId}&child=${card.id}&key=${API_KEY}&token=${token}`, {
+          method: 'POST'
+        });
+
+        alert('Task Card created!');
+      } else if (action === 'delete') {
+        tasks.splice(idx, 1);
+        t.set('card', 'shared', 'checklistData', tasks);
+        renderChecklist(tasks);
+      }
     });
+  });
+}
 
-    loadTasks();
-  </script>
+async function loadChecklist() {
+  const tasks = await t.get('card', 'shared', 'checklistData') || [];
+  renderChecklist(tasks);
+}
+
+document.getElementById('add-task').addEventListener('click', async () => {
+  const name = prompt('Task Name');
+  if (!name) return;
+  const due = prompt('Due Date (YYYY-MM-DD)');
+  const member = prompt('Member ID(s) (comma separated)');
+  
+  const tasks = await t.get('card', 'shared', 'checklistData') || [];
+  tasks.push({ name, due, member });
+  await t.set('card', 'shared', 'checklistData', tasks);
+  renderChecklist(tasks);
+});
+
+loadChecklist();
+</script>
 </body>
 </html>
