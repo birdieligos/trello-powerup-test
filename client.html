@@ -1,113 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    .task-checklist {
+    body {
+      font-family: sans-serif;
       padding: 10px;
     }
-    .task-title {
+    .task-checklist {
+      margin-top: 10px;
+    }
+    .task-header {
       font-weight: bold;
       margin-bottom: 10px;
     }
     .task-list {
-      margin: 0;
-      padding: 0;
       list-style: none;
+      padding: 0;
     }
     .task-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      padding: 8px;
       background: #f4f5f7;
+      margin-bottom: 5px;
+      padding: 8px;
       border-radius: 4px;
-    }
-    .task-left {
-      display: flex;
-      flex-direction: column;
-    }
-    .task-name {
-      font-weight: bold;
     }
     .task-meta {
       font-size: 12px;
-      color: #666;
+      color: #555;
+      margin-top: 2px;
     }
     .task-actions {
-      cursor: pointer;
-      font-size: 18px;
+      position: relative;
     }
-    #add-task-btn {
-      margin-top: 10px;
-      padding: 8px;
-      background: #0079bf;
-      color: #fff;
+    .three-dots {
+      cursor: pointer;
+      font-size: 20px;
+      padding: 5px;
+    }
+    .action-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 25px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    .action-menu div {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .action-menu div:hover {
+      background: #eee;
+    }
+    .add-task-btn {
+      margin-top: 15px;
+      padding: 10px;
+      width: 100%;
+      background-color: #026aa7;
+      color: white;
       border: none;
       border-radius: 4px;
+      font-weight: bold;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-<div class="task-checklist">
-  <div class="task-title">Task Checklist</div>
-  <ul id="task-list" class="task-list"></ul>
-  <button id="add-task-btn">+ Add New Task</button>
-</div>
+  <div class="task-checklist">
+    <div class="task-header">Task Checklist</div>
+    <ul id="task-list" class="task-list"></ul>
+    <button id="add-task" class="add-task-btn">+ Add New Task</button>
+  </div>
 
-<script>
-  const t = TrelloPowerUp.iframe();
-  const taskList = document.getElementById('task-list');
-  const addTaskBtn = document.getElementById('add-task-btn');
+  <script>
+    const t = TrelloPowerUp.iframe();
 
-  function createTaskItem(taskName, member, dueDate) {
-    const li = document.createElement('li');
-    li.className = 'task-item';
+    document.getElementById('add-task').addEventListener('click', () => {
+      const taskName = prompt('Enter Task Name:');
+      const dueDate = prompt('Enter Due Date (YYYY-MM-DD):');
+      const member = prompt('Enter Member Initials or Name:');
 
-    const leftDiv = document.createElement('div');
-    leftDiv.className = 'task-left';
-    leftDiv.innerHTML = `
-      <div class="task-name">${taskName}</div>
-      <div class="task-meta">Due: ${dueDate || 'None'} | Member: ${member || 'None'}</div>
-    `;
+      if (!taskName) return;
 
-    const actionBtn = document.createElement('div');
-    actionBtn.className = 'task-actions';
-    actionBtn.innerHTML = '&#x22EE;'; // three vertical dots
+      const taskList = document.getElementById('task-list');
 
-    actionBtn.addEventListener('click', () => {
-      const choice = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
-      if (choice === 'create') {
-        if (!member || !dueDate) {
-          alert('Task must have both Member and Due Date assigned!');
-        } else {
-          alert(`✅ Create Task Card for: ${taskName}\n(This will later trigger Trello API call)`);
+      const li = document.createElement('li');
+      li.className = 'task-item';
+
+      li.innerHTML = `
+        <div>
+          <div>${taskName}</div>
+          <div class="task-meta">Due: ${dueDate || 'None'} | Member: ${member || 'None'}</div>
+        </div>
+        <div class="task-actions">
+          <div class="three-dots">&#x22EE;</div>
+          <div class="action-menu">
+            <div class="create-task-card">Create Task Card</div>
+            <div class="delete-task">Delete Task</div>
+          </div>
+        </div>
+      `;
+
+      const threeDots = li.querySelector('.three-dots');
+      const actionMenu = li.querySelector('.action-menu');
+
+      threeDots.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.action-menu').forEach(menu => {
+          if (menu !== actionMenu) menu.style.display = 'none';
+        });
+        actionMenu.style.display = actionMenu.style.display === 'block' ? 'none' : 'block';
+      });
+
+      li.querySelector('.create-task-card').addEventListener('click', async () => {
+        if (!dueDate || !member) {
+          alert('Member and Due Date must be assigned to create a task card.');
+          return;
         }
-      } else if (choice === 'delete') {
+        alert('✅ Task card would be created here (API call coming soon)');
+        actionMenu.style.display = 'none';
+      });
+
+      li.querySelector('.delete-task').addEventListener('click', () => {
         li.remove();
-      }
+      });
+
+      taskList.appendChild(li);
     });
 
-    li.appendChild(leftDiv);
-    li.appendChild(actionBtn);
-    taskList.appendChild(li);
-  }
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.action-menu').forEach(menu => {
+        menu.style.display = 'none';
+      });
+    });
 
-  addTaskBtn.addEventListener('click', () => {
-    const taskName = prompt('Enter Task Name:');
-    if (!taskName) return;
-    const dueDate = prompt('Enter Due Date (YYYY-MM-DD):');
-    const member = prompt('Enter Member Name or ID:');
-    createTaskItem(taskName, member, dueDate);
-  });
-
-  t.render(() => {
-    return t.sizeTo(document.body);
-  });
-</script>
+    t.render(function(){
+      // when Trello asks iframe to re-render
+    });
+  </script>
 </body>
 </html>
