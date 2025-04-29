@@ -3,38 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <title>Task Checklist</title>
+
+  <!-- Load Trello Power-Up API FIRST -->
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
+
 <script>
-  window.addEventListener('load', function () {
-    window.TrelloPowerUp.initialize({
+  // Initialize the Power-Up
+  TrelloPowerUp.initialize({
 
-      'authorization-status': t =>
-        t.get('member', 'private', 'trello_token')
-          .then(token => ({ authorized: !!token })),
+    'authorization-status': t =>
+      t.get('member', 'private', 'trello_token')
+        .then(token => ({ authorized: !!token })),
 
-      'show-authorization': t =>
-        t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+    'show-authorization': t =>
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-      'card-back-section': (t) => ({
-        title: 'Task Checklist',
-        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-        content: {
-          type: 'iframe',
-          url: t.signUrl('./client.html'),
-          height: 500
-        }
-      }),
+    'card-back-section': (t) => ({
+      title: 'Task Checklist',
+      icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+      content: {
+        type: 'iframe',
+        url: t.signUrl('./client.html'), // Secure iframe URL signing
+        height: 500
+      }
+    }),
 
-      'popup': t => [],
-      'card-buttons': t => [],
-      'card-badges': t => [],
-      'attachment-sections': t => [],
-      'card-detail-badges': t => []
+    'popup': t => [],
 
-    });
+    'card-buttons': t => [],
+
+    'card-badges': t => [],
+
+    'attachment-sections': t => [],
+
+    'card-detail-badges': t => []
+
   });
 </script>
+
 </body>
 </html>
