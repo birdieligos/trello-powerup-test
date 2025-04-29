@@ -1,128 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Task Checklist</title>
+  <meta charset="utf-8">
+  <title>Trello Power‑Up: Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 10px; }
-    .task-list { list-style: none; padding: 0; }
-    .task-item { display: flex; align-items: center; background: #f4f5f7; padding: 8px; border-radius: 6px; margin-bottom: 6px; gap: 8px; }
-    .task-name { flex: 1; font-weight: bold; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 6px; }
-    .set-date, .assign-member, .three-dots { background: #e2e4e6; border: none; padding: 6px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-    .three-dots { font-size: 18px; padding: 5px 8px; }
-    .action-menu { display: none; position: absolute; background: white; border: 1px solid #ccc; border-radius: 4px; z-index: 100; }
-    .action-menu div { padding: 8px 12px; cursor: pointer; }
-    .action-menu div:hover { background: #eee; }
-    .add-task-btn { margin-top: 10px; padding: 10px; background: #026aa7; color: white; font-weight: bold; border: none; border-radius: 6px; width: 100%; cursor: pointer; }
-    .member-avatar { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; margin-right: 4px; }
-  </style>
 </head>
 <body>
-
-<ul id="task-list" class="task-list"></ul>
-<button id="add-task" class="add-task-btn">+ Add New Task</button>
-
 <script>
-const t = TrelloPowerUp.iframe();
-let members = [];
+  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-async function fetchMembers() {
-  const card = await t.card('idBoard');
-  const token = await t.get('member', 'private', 'trello_token');
-  const boardId = card.idBoard;
-  const res = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-  members = await res.json();
-}
+  TrelloPowerUp.initialize({
 
-function createTaskItem() {
-  const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
+    'authorization-status': t =>
+      t.get('member', 'private', 'trello_token')
+       .then(token => ({ authorized: !!token })),
 
-  li.innerHTML = `
-    <input type="text" class="task-name" placeholder="Task name..." />
-    <button class="set-date"><span>🕑</span>Set Date</button>
-    <button class="assign-member"><span>👤</span>Assign</button>
-    <button class="three-dots">&#x22EE;</button>
-  `;
+    'show-authorization': t =>
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-  const setDateBtn = li.querySelector('.set-date');
-  const assignBtn = li.querySelector('.assign-member');
-  const threeDots = li.querySelector('.three-dots');
+    'card-back-section': function(t, options) {
+      return {
+        title: 'Task Checklist',
+        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./client.html?cb=2'),  // 🚨 cache-busting number updated
+          height: 400
+        }
+      };
+    },
 
-  setDateBtn.addEventListener('click', () => {
-    const dateInput = document.createElement('input');
-    dateInput.type = 'date';
-    dateInput.style.position = 'absolute';
-    dateInput.style.opacity = 0;
-    document.body.appendChild(dateInput);
-    dateInput.focus();
-    dateInput.addEventListener('change', () => {
-      if (dateInput.value) {
-        const date = new Date(dateInput.value);
-        const options = { month: 'short', day: 'numeric' };
-        setDateBtn.innerHTML = `🕑 ${date.toLocaleDateString('en-US', options)}`;
-      }
-      dateInput.remove();
-    });
+    'card-buttons': t => [],  // no card button anymore
+    'card-badges':  t => []   // no badges needed
   });
-
-  assignBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const menu = document.createElement('div');
-    menu.className = 'action-menu';
-    members.forEach(member => {
-      const option = document.createElement('div');
-      option.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar"> ${member.fullName}`;
-      option.addEventListener('click', () => {
-        assignBtn.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar">`;
-        menu.remove();
-      });
-      menu.appendChild(option);
-    });
-    document.body.appendChild(menu);
-    const rect = assignBtn.getBoundingClientRect();
-    menu.style.top = rect.bottom + 'px';
-    menu.style.left = rect.left + 'px';
-
-    document.addEventListener('click', () => menu.remove(), { once: true });
-  });
-
-  threeDots.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const menu = document.createElement('div');
-    menu.className = 'action-menu';
-    const createOption = document.createElement('div');
-    createOption.textContent = 'Create Task Card';
-    createOption.addEventListener('click', () => {
-      alert('Task card creation logic goes here');
-      menu.remove();
-    });
-    const deleteOption = document.createElement('div');
-    deleteOption.textContent = 'Delete Task';
-    deleteOption.addEventListener('click', () => {
-      li.remove();
-      menu.remove();
-    });
-    menu.appendChild(createOption);
-    menu.appendChild(deleteOption);
-    document.body.appendChild(menu);
-    const rect = threeDots.getBoundingClientRect();
-    menu.style.top = rect.bottom + 'px';
-    menu.style.left = rect.left + 'px';
-
-    document.addEventListener('click', () => menu.remove(), { once: true });
-  });
-
-  taskList.appendChild(li);
-}
-
-document.getElementById('add-task').addEventListener('click', createTaskItem);
-document.addEventListener('DOMContentLoaded', fetchMembers);
-
-t.render(() => {});
 </script>
-
 </body>
 </html>
