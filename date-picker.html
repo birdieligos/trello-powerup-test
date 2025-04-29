@@ -7,17 +7,19 @@
 </head>
 <body style="font-family:sans-serif;padding:10px">
   <input id="date-input" type="date" style="width:100%;padding:6px;font-size:14px" />
-
   <script>
     const t = TrelloPowerUp.iframe();
-    const input = document.getElementById('date-input');
+    console.log('[Date Picker] Initialized');
 
-    input.valueAsDate = new Date(); // Defaults to today
+    const input = document.getElementById('date-input');
+    input.valueAsDate = new Date();
+    console.log('[Date Picker] Default set to today:', input.value);
 
     input.addEventListener('change', () => {
       const val = new Date(input.value);
       const formatted = val.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      t.closePopup(formatted);  // ✅ Correct way to send the selected date back
+      console.log('[Date Picker] User selected:', formatted);
+      t.closePopup(formatted);
     });
   </script>
 </body>
