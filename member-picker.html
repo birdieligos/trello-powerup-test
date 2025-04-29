@@ -24,8 +24,11 @@
         ${m.fullName}
       `;
       li.addEventListener('click', () => {
-        t.closePopup();
-        t.notifyParent({ id: m.id, avatar: m.avatarUrl + '/30.png' });
+        t.closePopup({
+          id: m.id,
+          avatar: m.avatarUrl ? m.avatarUrl + '/30.png' : '',
+          name: m.fullName
+        });
       });
       list.appendChild(li);
     });
