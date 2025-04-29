@@ -45,21 +45,6 @@
       font-size: 18px;
       padding: 5px 8px;
     }
-    .action-menu {
-      display: none;
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      z-index: 10;
-    }
-    .action-menu div {
-      padding: 8px 12px;
-      cursor: pointer;
-    }
-    .action-menu div:hover {
-      background: #eee;
-    }
     .add-task-btn {
       margin-top: 10px;
       padding: 10px;
@@ -89,14 +74,10 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 
 async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
-  } catch (e) {
-    console.error('Error fetching members', e);
-  }
+  const board = await t.board('id');
+  const token = await t.get('member', 'private', 'trello_token');
+  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+  members = await res.json();
 }
 
 function createTaskItem() {
@@ -116,38 +97,29 @@ function createTaskItem() {
   const threeDots = li.querySelector('.three-dots');
 
   setDateBtn.addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'date';
-    input.style.position = 'absolute';
-    input.style.opacity = 0;
-    document.body.appendChild(input);
-    input.focus();
-    input.addEventListener('change', () => {
-      if (input.value) {
-        const date = new Date(input.value);
-        const options = { month: 'short', day: 'numeric' };
-        setDateBtn.innerHTML = `🕑 ${date.toLocaleDateString('en-US', options)}`;
+    t.popup({
+      title: 'Select Due Date',
+      url: 'date-picker.html',
+      height: 130,
+      args: {}, // pass context if needed
+    }).then(selected => {
+      if (selected) {
+        setDateBtn.innerHTML = `🕑 ${selected}`;
       }
-      input.remove();
     });
   });
 
   assignBtn.addEventListener('click', () => {
-    const menu = document.createElement('div');
-    menu.className = 'action-menu';
-    members.forEach(member => {
-      const option = document.createElement('div');
-      option.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar"> ${member.fullName}`;
-      option.addEventListener('click', () => {
-        assignBtn.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar">`;
-        menu.remove();
-      });
-      menu.appendChild(option);
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members },
+    }).then(selected => {
+      if (selected && selected.avatar) {
+        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+      }
     });
-    document.body.appendChild(menu);
-    const rect = assignBtn.getBoundingClientRect();
-    menu.style.top = rect.bottom + 'px';
-    menu.style.left = rect.left + 'px';
   });
 
   threeDots.addEventListener('click', (e) => {
@@ -169,6 +141,7 @@ function createTaskItem() {
     menu.appendChild(deleteOption);
     document.body.appendChild(menu);
     const rect = threeDots.getBoundingClientRect();
+    menu.style.position = 'absolute';
     menu.style.top = rect.bottom + 'px';
     menu.style.left = rect.left + 'px';
   });
@@ -178,9 +151,7 @@ function createTaskItem() {
 
 document.getElementById('add-task').addEventListener('click', createTaskItem);
 document.addEventListener('DOMContentLoaded', fetchMembers);
-
 t.render(() => {});
 </script>
-
 </body>
 </html>
