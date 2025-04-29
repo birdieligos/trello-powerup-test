@@ -5,62 +5,34 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 10px;
-    }
-    .task-list {
-      list-style: none;
-      padding: 0;
-    }
+    body { font-family: sans-serif; padding: 10px; }
+    .task-list { list-style: none; padding: 0; }
     .task-item {
-      display: flex;
-      align-items: center;
-      background: #f4f5f7;
-      padding: 8px;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      gap: 8px;
+      display: flex; align-items: center;
+      background: #f4f5f7; padding: 8px; border-radius: 6px;
+      margin-bottom: 6px; gap: 8px;
     }
     .task-name {
-      flex: 1;
-      font-weight: bold;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 6px;
+      flex: 1; font-weight: bold; font-size: 14px;
+      border: 1px solid #ccc; border-radius: 4px; padding: 6px;
     }
     .set-date, .assign-member, .three-dots {
-      background: #e2e4e6;
-      border: none;
-      padding: 6px 8px;
-      border-radius: 4px;
-      font-size: 12px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+      background: #e2e4e6; border: none;
+      padding: 6px 8px; border-radius: 4px;
+      font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; gap: 4px;
     }
-    .three-dots {
-      font-size: 18px;
-      padding: 5px 8px;
-    }
+    .three-dots { font-size: 18px; padding: 5px 8px; }
     .add-task-btn {
-      margin-top: 10px;
-      padding: 10px;
-      background: #026aa7;
-      color: white;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      width: 100%;
+      margin-top: 10px; padding: 10px;
+      background-color: #026aa7; color: white;
+      font-weight: bold; border: none;
+      border-radius: 6px; width: 100%;
       cursor: pointer;
     }
     .member-avatar {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      object-fit: cover;
+      width: 20px; height: 20px;
+      border-radius: 50%; object-fit: cover;
     }
   </style>
 </head>
@@ -74,17 +46,23 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 
 async function fetchMembers() {
+  console.log('🔍 Fetching board ID and Trello token...');
   try {
     const board = await t.board('id');
     const token = await t.get('member', 'private', 'trello_token');
+    console.log('✅ Board ID:', board.id);
+    console.log('✅ Token:', token);
+
     const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
     members = await res.json();
+    console.log('✅ Members loaded:', members);
   } catch (e) {
-    console.error('Error fetching members', e);
+    console.error('❌ Error fetching members:', e);
   }
 }
 
 function createTaskItem() {
+  console.log('➕ Creating new task item...');
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -100,46 +78,54 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-  setDateBtn.addEventListener('click', function(event) {
+  setDateBtn.addEventListener('click', (e) => {
+    console.log('📆 Set Date button clicked');
     t.popup({
       title: 'Select Due Date',
       url: 'date-picker.html',
       height: 130,
-      target: event.target
+      target: e.target
     }).then(selected => {
+      console.log('📅 Selected date:', selected);
       if (selected) {
         setDateBtn.innerHTML = `🕑 ${selected}`;
       }
-    });
+    }).catch(err => console.error('❌ Error in date popup:', err));
   });
 
-  assignBtn.addEventListener('click', function(event) {
+  assignBtn.addEventListener('click', (e) => {
+    console.log('👤 Assign Member button clicked');
     t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      target: event.target
+      target: e.target
     }).then(selected => {
+      console.log('🙋‍♂️ Selected member:', selected);
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
       }
-    });
+    }).catch(err => console.error('❌ Error in member popup:', err));
   });
 
-  threeDots.addEventListener('click', function(event) {
-    event.stopPropagation();
+  threeDots.addEventListener('click', (e) => {
+    console.log('⚙️ Three dots clicked (action menu)');
+    e.stopPropagation();
     const menu = document.createElement('div');
     menu.className = 'action-menu';
     const createOption = document.createElement('div');
     createOption.textContent = 'Create Task Card';
     createOption.addEventListener('click', () => {
-      alert('Task card creation logic goes here.');
+      const name = li.querySelector('.task-name').value;
+      console.log('🚀 Task card would be created with name:', name);
+      alert(`Task card creation logic goes here for: ${name}`);
       menu.remove();
     });
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Task';
     deleteOption.addEventListener('click', () => {
+      console.log('🗑️ Deleting task...');
       li.remove();
     });
     menu.appendChild(createOption);
@@ -152,11 +138,23 @@ function createTaskItem() {
   });
 
   taskList.appendChild(li);
+  console.log('✅ Task item added to DOM.');
 }
 
-document.getElementById('add-task').addEventListener('click', createTaskItem);
-document.addEventListener('DOMContentLoaded', fetchMembers);
-t.render(() => {});
+document.getElementById('add-task').addEventListener('click', () => {
+  console.log('🟦 Add New Task button clicked');
+  createTaskItem();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('📦 DOM fully loaded, fetching members...');
+  fetchMembers();
+});
+
+t.render(() => {
+  console.log('🔄 t.render() called – iframe refresh triggered by Trello');
+});
 </script>
+
 </body>
 </html>
