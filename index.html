@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Trello Power‑Up: Task Checklist (v2.0)</title>
+  <title>Task Checklist Power-Up</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
@@ -11,22 +11,22 @@
 
   TrelloPowerUp.initialize({
     'authorization-status': t =>
-      t.get('member','private','trello_token')
-       .then(tok => ({ authorized: !!tok })),
+      t.get('member', 'private', 'trello_token').then(token => ({ authorized: !!token })),
     'show-authorization': t =>
-      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 140 }),
 
     'card-buttons': t => [{
       text: 'Create Task Checklist',
       callback: t => t.popup({
         title: 'Task Checklist',
         url: './client.html',
-        height: 500
+        height: 450,
       })
     }],
 
     'card-badges': t => [],
-    'card-back-section': t => []
+    'card-back-section': t => [],
+    'card-detail-badges': t => []
   });
 </script>
 </body>
