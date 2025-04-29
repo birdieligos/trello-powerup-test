@@ -7,84 +7,62 @@
   <style>
     body {
       font-family: sans-serif;
+      margin: 0;
       padding: 10px;
     }
     .task-list {
       list-style: none;
       padding: 0;
-      margin-top: 10px;
+      margin: 0;
     }
     .task-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       background: #f4f5f7;
-      margin-bottom: 6px;
-      padding: 8px;
-      border-radius: 4px;
-    }
-    .task-content {
-      display: flex;
-      flex-direction: column;
-    }
-    .task-meta {
-      display: flex;
-      gap: 12px;
-      font-size: 12px;
-      color: #555;
-      margin-top: 5px;
-    }
-    .meta-field {
-      cursor: pointer;
-      text-decoration: underline;
-    }
-    .task-actions {
-      position: relative;
-    }
-    .three-dots {
-      cursor: pointer;
-      font-size: 20px;
-      padding: 5px;
-    }
-    .action-menu {
-      display: none;
-      position: absolute;
-      right: 0;
-      top: 25px;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      z-index: 10;
-    }
-    .action-menu div {
+      border-radius: 10px;
       padding: 8px 12px;
-      cursor: pointer;
+      margin-bottom: 6px;
     }
-    .action-menu div:hover {
-      background: #eee;
-    }
-    .add-task-btn {
-      margin-top: 10px;
-      padding: 10px;
-      background-color: #026aa7;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-    }
-    input.task-input {
+    .task-name {
       font-size: 14px;
-      padding: 5px;
+      font-weight: 500;
+      flex: 1;
       border: none;
       background: transparent;
-      border-bottom: 1px solid #ccc;
-      margin-bottom: 2px;
-      width: 220px;
+      outline: none;
+    }
+    .task-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .task-actions img {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .task-actions img:hover {
+      opacity: 1;
+    }
+    .add-task-btn {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #026aa7;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
+
 <body>
 
   <ul id="task-list" class="task-list"></ul>
@@ -92,102 +70,55 @@
 
   <script>
     const t = TrelloPowerUp.iframe();
-    const TASK_KEY = 'taskChecklist';
+    const taskList = document.getElementById('task-list');
+    const addTaskBtn = document.getElementById('add-task');
 
-    function saveTasks() {
-      const tasks = [];
-      document.querySelectorAll('.task-item').forEach(item => {
-        tasks.push({
-          name: item.querySelector('.task-input').value.trim(),
-          due: item.querySelector('.due-date').textContent.replace('Due: ', ''),
-          member: item.querySelector('.member-name').textContent.replace('Member: ', '')
-        });
-      });
-      t.set('card', 'shared', TASK_KEY, tasks);
-    }
-
-    function renderTask(task = {}) {
+    addTaskBtn.addEventListener('click', () => {
       const li = document.createElement('li');
       li.className = 'task-item';
-      li.innerHTML = `
-        <div class="task-content">
-          <input type="text" placeholder="Task name..." class="task-input" value="${task.name || ''}">
-          <div class="task-meta">
-            <span class="due-date meta-field">Due: ${task.due || '(click to set)'}</span> | 
-            <span class="member-name meta-field">Member: ${task.member || '(click to set)'}</span>
-          </div>
-        </div>
-        <div class="task-actions">
-          <div class="three-dots">&#x22EE;</div>
-          <div class="action-menu">
-            <div class="create-task-card">Create Task Card</div>
-            <div class="delete-task">Delete Task</div>
-          </div>
-        </div>
+
+      const input = document.createElement('input');
+      input.className = 'task-name';
+      input.type = 'text';
+      input.placeholder = 'Task name...';
+
+      const actions = document.createElement('div');
+      actions.className = 'task-actions';
+      actions.innerHTML = `
+        <img src="https://cdn-icons-png.flaticon.com/512/61/61112.png" title="Set Due Date" class="due-date-btn">
+        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" title="Assign Member" class="assign-btn">
+        <img src="https://cdn-icons-png.flaticon.com/512/512/512142.png" title="More" class="more-btn">
       `;
 
-      const taskList = document.getElementById('task-list');
+      li.appendChild(input);
+      li.appendChild(actions);
       taskList.appendChild(li);
 
-      li.querySelector('.three-dots').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.action-menu').forEach(menu => {
-          if (menu !== li.querySelector('.action-menu')) menu.style.display = 'none';
-        });
-        const menu = li.querySelector('.action-menu');
-        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-      });
+      input.focus();
 
-      li.querySelector('.delete-task').addEventListener('click', () => {
-        li.remove();
-        saveTasks();
-      });
-
-      li.querySelector('.create-task-card').addEventListener('click', async () => {
-        const taskName = li.querySelector('.task-input').value.trim();
-        const dueDate = li.querySelector('.due-date').textContent.replace('Due: ', '');
-        const member = li.querySelector('.member-name').textContent.replace('Member: ', '');
-        if (!taskName || dueDate.includes('click') || member.includes('click')) {
-          alert('Please fill out Task Name, Due Date, and Member before creating.');
-          return;
-        }
-        alert(`✅ Would create task card: "${taskName}" here (API call next)`);
-        li.querySelector('.action-menu').style.display = 'none';
-      });
-
-      li.querySelector('.task-input').addEventListener('blur', saveTasks);
-      li.querySelector('.due-date').addEventListener('click', () => {
-        const newDue = prompt('Enter Due Date (YYYY-MM-DD)');
-        if (newDue) {
-          li.querySelector('.due-date').textContent = `Due: ${newDue}`;
-          saveTasks();
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && input.value.trim() !== '') {
+          input.disabled = true;
         }
       });
-      li.querySelector('.member-name').addEventListener('click', () => {
-        const newMember = prompt('Enter Member Name');
-        if (newMember) {
-          li.querySelector('.member-name').textContent = `Member: ${newMember}`;
-          saveTasks();
-        }
+
+      actions.querySelector('.due-date-btn').addEventListener('click', () => {
+        alert('Pick a calendar date (calendar picker will be implemented)');
       });
-    }
 
-    document.getElementById('add-task').addEventListener('click', () => {
-      renderTask();
-      saveTasks();
-    });
+      actions.querySelector('.assign-btn').addEventListener('click', () => {
+        alert('Pick a member from the board (list will be implemented)');
+      });
 
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.action-menu').forEach(menu => menu.style.display = 'none');
+      actions.querySelector('.more-btn').addEventListener('click', () => {
+        const choice = prompt('Create Task Card or Delete Task? (type create or delete)');
+        if (choice === 'delete') li.remove();
+        else if (choice === 'create') alert('Task card would be created here (API call next)');
+      });
     });
 
     t.render(function(){
-      t.get('card', 'shared', TASK_KEY).then(function(tasks){
-        if (tasks && tasks.length) {
-          document.getElementById('task-list').innerHTML = '';
-          tasks.forEach(task => renderTask(task));
-        }
-      });
+      return t.sizeTo('#task-list');
     });
   </script>
 
