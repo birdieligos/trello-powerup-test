@@ -1,3 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Task Checklist Power-Up</title>
+  <script src="https://p.trellocdn.com/v1/power-up.min.js"></script> <!-- ✅ Fixed version -->
+</head>
+<body>
+<script>
 TrelloPowerUp.initialize({
 
   'authorization-status': t =>
@@ -7,15 +16,15 @@ TrelloPowerUp.initialize({
   'show-authorization': t =>
     t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-'card-back-section': (t) => ({
-  title: 'Task Checklist',
-  icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-  content: {
-    type: 'iframe',
-    url: t.signUrl('./client.html'),
-    height: 500
-  }
-}),
+  'card-back-section': (t) => ({
+    title: 'Task Checklist',
+    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+    content: {
+      type: 'iframe',
+      url: t.signUrl('./client.html'),
+      height: 500
+    }
+  }),
 
   'popup': t => [],
   'card-buttons': t => [],
@@ -24,3 +33,6 @@ TrelloPowerUp.initialize({
   'card-detail-badges': t => []
 
 });
+</script>
+</body>
+</html>
