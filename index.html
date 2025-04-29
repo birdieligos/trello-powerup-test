@@ -24,18 +24,17 @@ TrelloPowerUp.initialize({
     content: {
       type: 'iframe',
       url: t.signUrl('./client.html'),
-      height: 400
+      height: 500
     }
   }),
 
-  // Stubs for unused features (prevents warnings)
+  'popup': t => [],
+
+  // Required but unused
   'card-buttons': t => [],
   'card-badges': t => [],
   'attachment-sections': t => [],
-  'card-detail-badges': t => [],
-
-  // Required for popup support
-  'popup': t => []
+  'card-detail-badges': t => []
 
 });
 </script>
