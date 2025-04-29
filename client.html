@@ -100,12 +100,12 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-  setDateBtn.addEventListener('click', (e) => {
+  setDateBtn.addEventListener('click', function(event) {
     t.popup({
       title: 'Select Due Date',
       url: 'date-picker.html',
       height: 130,
-      target: e.target
+      target: event.target
     }).then(selected => {
       if (selected) {
         setDateBtn.innerHTML = `🕑 ${selected}`;
@@ -113,13 +113,13 @@ function createTaskItem() {
     });
   });
 
-  assignBtn.addEventListener('click', (e) => {
+  assignBtn.addEventListener('click', function(event) {
     t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      target: e.target
+      target: event.target
     }).then(selected => {
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
@@ -127,8 +127,8 @@ function createTaskItem() {
     });
   });
 
-  threeDots.addEventListener('click', (e) => {
-    e.stopPropagation();
+  threeDots.addEventListener('click', function(event) {
+    event.stopPropagation();
     const menu = document.createElement('div');
     menu.className = 'action-menu';
     const createOption = document.createElement('div');
