@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <title>Task Checklist Power-Up</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
@@ -10,23 +10,42 @@
   const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
   TrelloPowerUp.initialize({
-    'authorization-status': t =>
-      t.get('member', 'private', 'trello_token').then(token => ({ authorized: !!token })),
-    'show-authorization': t =>
-      t.popup({ title: 'Authorize', url: './authorize.html', height: 140 }),
+    'authorization-status': (t) =>
+      t.get('member', 'private', 'trello_token')
+        .then(token => ({ authorized: !!token })),
 
-    'card-buttons': t => [{
-      text: 'Create Task Checklist',
-      callback: t => t.popup({
+    'show-authorization': (t) =>
+      t.popup({
+        title: 'Authorize',
+        url: './authorize.html',
+        height: 150
+      }),
+
+    'card-back-section': function(t, options) {
+      return {
         title: 'Task Checklist',
-        url: './client.html',
-        height: 450,
-      })
+        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./card-section.html'),
+          height: 400
+        }
+      };
+    },
+
+    'card-buttons': (t) => [{
+      text: 'Open Task Checklist',
+      callback: function(t) {
+        return t.popup({
+          title: 'Task Checklist',
+          url: './card-section.html',
+          height: 400
+        });
+      }
     }],
 
-    'card-badges': t => [],
-    'card-back-section': t => [],
-    'card-detail-badges': t => []
+    // (stubbed to prevent timeouts)
+    'card-badges': t => []
   });
 </script>
 </body>
