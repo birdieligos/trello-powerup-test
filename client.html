@@ -42,18 +42,14 @@
 <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
 <script>
-const t = TrelloPowerUp.iframe(); // ✅ initialize only once
 let members = [];
 
 async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token});
-    members = await res.json();
-  } catch (err) {
-    console.error('❌ Error fetching members:', err);
-  }
+  const t = TrelloPowerUp.iframe();
+  const board = await t.board('id');
+  const token = await t.get('member', 'private', 'trello_token');
+  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+  members = await res.json();
 }
 
 function createTaskItem() {
@@ -61,18 +57,19 @@ function createTaskItem() {
   const li = document.createElement('li');
   li.className = 'task-item';
 
-  li.innerHTML = 
+  li.innerHTML = `
     <input type="text" class="task-name" placeholder="Task name..." />
     <button class="set-date"><span>🕑</span>Set Date</button>
     <button class="assign-member"><span>👤</span>Assign</button>
     <button class="three-dots">&#x22EE;</button>
-  ;
+  `;
 
   const setDateBtn = li.querySelector('.set-date');
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
   setDateBtn.addEventListener('click', (e) => {
+    const t = TrelloPowerUp.iframe();
     console.log('📆 Set Date button clicked');
     t.popup({
       title: 'Select Due Date',
@@ -81,7 +78,7 @@ function createTaskItem() {
       mouseEvent: e
     }).then(selected => {
       if (selected) {
-        setDateBtn.innerHTML = 🕑 ${selected};
+        setDateBtn.innerHTML = `🕑 ${selected}`;
       }
     }).catch(err => {
       console.error('❌ Error in date popup:', err);
@@ -89,6 +86,7 @@ function createTaskItem() {
   });
 
   assignBtn.addEventListener('click', (e) => {
+    const t = TrelloPowerUp.iframe();
     console.log('👤 Assign Member button clicked');
     t.popup({
       title: 'Assign Member',
@@ -98,7 +96,7 @@ function createTaskItem() {
       mouseEvent: e
     }).then(selected => {
       if (selected && selected.avatar) {
-        assignBtn.innerHTML = <img src="${selected.avatar}" class="member-avatar" />;
+        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
       }
     }).catch(err => {
       console.error('❌ Error in member popup:', err);
@@ -135,6 +133,5 @@ function createTaskItem() {
 document.getElementById('add-task').addEventListener('click', createTaskItem);
 document.addEventListener('DOMContentLoaded', fetchMembers);
 </script>
-
 </body>
 </html>
