@@ -17,24 +17,32 @@
     .task-item {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       background: #f4f5f7;
-      margin-bottom: 6px;
-      padding: 8px;
+      margin-bottom: 8px;
+      padding: 10px;
       border-radius: 4px;
+    }
+    .task-content {
+      flex-grow: 1;
     }
     .task-input {
       font-size: 14px;
-      padding: 5px;
-      width: 200px;
+      width: 100%;
       border: none;
       background: transparent;
       border-bottom: 1px solid #ccc;
+      margin-bottom: 5px;
+      outline: none;
     }
     .task-meta {
       font-size: 12px;
       color: #555;
-      margin-top: 2px;
+    }
+    .meta-link {
+      color: #0079bf;
+      cursor: pointer;
+      text-decoration: underline;
     }
     .task-actions {
       position: relative;
@@ -63,7 +71,7 @@
     }
     .add-task-btn {
       margin-top: 10px;
-      padding: 8px;
+      padding: 10px;
       background-color: #026aa7;
       color: white;
       border: none;
@@ -89,9 +97,12 @@
       li.className = 'task-item';
 
       li.innerHTML = `
-        <div>
+        <div class="task-content">
           <input type="text" placeholder="Task name..." class="task-input">
-          <div class="task-meta">Due: (click to set) | Member: (click to set)</div>
+          <div class="task-meta">
+            Due: <span class="meta-link due-date">Set Due Date</span> | 
+            Member: <span class="meta-link member-name">Assign Member</span>
+          </div>
         </div>
         <div class="task-actions">
           <div class="three-dots">&#x22EE;</div>
@@ -104,6 +115,8 @@
 
       const threeDots = li.querySelector('.three-dots');
       const actionMenu = li.querySelector('.action-menu');
+      const dueDateSpan = li.querySelector('.due-date');
+      const memberSpan = li.querySelector('.member-name');
 
       threeDots.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -119,12 +132,34 @@
           alert('Task name is required before creating.');
           return;
         }
-        alert('✅ Task card would be created here (API call next)');
+        const dueDate = dueDateSpan.textContent !== "Set Due Date" ? dueDateSpan.textContent : null;
+        const member = memberSpan.textContent !== "Assign Member" ? memberSpan.textContent : null;
+
+        if (!dueDate || !member) {
+          alert('Both Due Date and Member must be set before creating.');
+          return;
+        }
+
+        alert(`✅ Would create Task Card:\n\nTask: ${taskName}\nDue: ${dueDate}\nMember: ${member}`);
         actionMenu.style.display = 'none';
       });
 
       li.querySelector('.delete-task').addEventListener('click', () => {
         li.remove();
+      });
+
+      dueDateSpan.addEventListener('click', () => {
+        const newDue = prompt('Enter Due Date (YYYY-MM-DD):');
+        if (newDue) {
+          dueDateSpan.textContent = newDue;
+        }
+      });
+
+      memberSpan.addEventListener('click', () => {
+        const newMember = prompt('Enter Member Name:');
+        if (newMember) {
+          memberSpan.textContent = newMember;
+        }
       });
 
       taskList.appendChild(li);
