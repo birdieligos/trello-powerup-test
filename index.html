@@ -7,46 +7,41 @@
 </head>
 <body>
 <script>
-  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
+const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-  TrelloPowerUp.initialize({
-    'authorization-status': (t) =>
-      t.get('member', 'private', 'trello_token')
-        .then(token => ({ authorized: !!token })),
+TrelloPowerUp.initialize({
+  'authorization-status': t =>
+    t.get('member', 'private', 'trello_token')
+     .then(tok => ({ authorized: !!tok })),
+  'show-authorization': t =>
+    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    'show-authorization': (t) =>
-      t.popup({
-        title: 'Authorize',
-        url: './authorize.html',
-        height: 150
-      }),
-
-    'card-back-section': function(t, options) {
-      return {
-        title: 'Task Checklist',
-        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-        content: {
-          type: 'iframe',
-          url: t.signUrl('./card-section.html'),
-          height: 400
-        }
-      };
-    },
-
-    'card-buttons': (t) => [{
-      text: 'Open Task Checklist',
-      callback: function(t) {
-        return t.popup({
+  // Add "Create Task Checklist" button
+  'card-buttons': t => [{
+    text: 'Create Task Checklist',
+    callback: t => {
+      return t.set('card', 'shared', 'checklistData', [])
+        .then(() => t.popup({
           title: 'Task Checklist',
-          url: './card-section.html',
+          url: './client.html',
           height: 400
-        });
-      }
-    }],
+        }));
+    }
+  }],
 
-    // (stubbed to prevent timeouts)
-    'card-badges': t => []
-  });
+  'card-back-section': t => [{
+    title: 'Task Checklist',
+    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+    content: {
+      type: 'iframe',
+      url: './client.html',
+      height: 400
+    }
+  }],
+
+  'card-badges': () => [],
+  'card-detail-badges': () => []
+});
 </script>
 </body>
 </html>
