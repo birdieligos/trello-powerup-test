@@ -1,47 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Task Checklist Power-Up</title>
+  <meta charset="utf-8">
+  <title>Trello Power‑Up: Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
-const API_KEY = '7443867af11d32c3e8f8152b114201fd';
+  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-TrelloPowerUp.initialize({
-  'authorization-status': t =>
-    t.get('member', 'private', 'trello_token')
-     .then(tok => ({ authorized: !!tok })),
-  'show-authorization': t =>
-    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+  TrelloPowerUp.initialize({
 
-  // Add "Create Task Checklist" button
-  'card-buttons': t => [{
-    text: 'Create Task Checklist',
-    callback: t => {
-      return t.set('card', 'shared', 'checklistData', [])
-        .then(() => t.popup({
-          title: 'Task Checklist',
-          url: './client.html',
+    'authorization-status': t =>
+      t.get('member','private','trello_token')
+       .then(token => ({ authorized: !!token })),
+
+    'show-authorization': t =>
+      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+
+    'card-back-section': function(t, options) {
+      return {
+        title: 'Task Checklist',
+        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg', // your logo/icon
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./client.html'),
           height: 400
-        }));
-    }
-  }],
+        }
+      };
+    },
 
-  'card-back-section': t => [{
-    title: 'Task Checklist',
-    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-    content: {
-      type: 'iframe',
-      url: './client.html',
-      height: 400
-    }
-  }],
+    // These are required to suppress warnings but not actually used now
+    'card-buttons': t => [],
+    'card-badges':  t => []
 
-  'card-badges': () => [],
-  'card-detail-badges': () => []
-});
+  });
 </script>
 </body>
 </html>
