@@ -78,13 +78,14 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-setDateBtn.addEventListener('click', (e) => {
+setDateBtn.addEventListener('click', function(e) {
+  const tLocal = TrelloPowerUp.iframe();
   console.log('📆 Set Date button clicked');
-  t.popup({
+  tLocal.popup({
     title: 'Select Due Date',
     url: 'date-picker.html',
     height: 130,
-    mouseEvent: e // ✅ correct property name
+    mouseEvent: e
   }).then(selected => {
     if (selected) {
       setDateBtn.innerHTML = `🕑 ${selected}`;
@@ -94,14 +95,15 @@ setDateBtn.addEventListener('click', (e) => {
   });
 });
 
-assignBtn.addEventListener('click', (e) => {
+assignBtn.addEventListener('click', function(e) {
+  const tLocal = TrelloPowerUp.iframe();
   console.log('👤 Assign Member button clicked');
-  t.popup({
+  tLocal.popup({
     title: 'Assign Member',
     url: 'member-picker.html',
     height: 300,
     args: { members },
-    mouseEvent: e // ✅ correct property name
+    mouseEvent: e
   }).then(selected => {
     if (selected && selected.avatar) {
       assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
