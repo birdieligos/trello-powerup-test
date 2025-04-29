@@ -59,14 +59,17 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 
-async function fetchMembers() {
+async function loadMembers() {
   try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
+    const stored = await t.get('board', 'shared', 'boardMembers');
+    if (Array.isArray(stored)) {
+      members = stored;
+      console.log('✅ Members loaded from shared storage');
+    } else {
+      console.warn('⚠️ No members found in shared storage');
+    }
   } catch (err) {
-    console.error('❌ Failed to fetch members:', err);
+    console.error('❌ Failed to load stored members:', err);
   }
 }
 
@@ -93,23 +96,32 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
-    t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
-      .then(selected => {
-        if (selected) {
-          task.dueDate = selected;
-          dateBtn.innerHTML = `🕑 ${selected}`;
-        }
-      });
+    t.popup({
+      title: 'Select Due Date',
+      url: 'date-picker.html',
+      height: 130,
+      mouseEvent: e
+    }).then(selected => {
+      if (selected) {
+        task.dueDate = selected;
+        dateBtn.innerHTML = `🕑 ${selected}`;
+      }
+    });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
-      .then(selected => {
-        if (selected?.avatar) {
-          task.memberAvatar = selected.avatar;
-          assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-        }
-      });
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members },
+      mouseEvent: e
+    }).then(selected => {
+      if (selected?.avatar) {
+        task.memberAvatar = selected.avatar;
+        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+      }
+    });
   });
 
   const addBtn = document.createElement('button');
@@ -157,11 +169,10 @@ function createTaskItem(task) {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-// Render shell immediately, delay fetch
-t.render(() => {
-  console.log('🧩 Power-Up loaded (no data save/load hooked)');
-  fetchMembers();         // Fetch only members
-  createTaskInputRow();   // Always show input row
+t.render(async () => {
+  console.log('🧩 Power-Up iframe rendered');
+  await loadMembers();      // Silent load from shared storage
+  createTaskInputRow();     // Show task input on every open
 });
 </script>
 </body>
