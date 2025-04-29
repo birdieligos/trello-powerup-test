@@ -1,47 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Task Checklist</title>
-
-  <!-- Load Trello Power-Up API FIRST -->
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="https://p.trellocdn.com/v1/power-up.min.js"></script>
 </head>
 <body>
-
 <script>
-  // Initialize the Power-Up
-  TrelloPowerUp.initialize({
+window.TrelloPowerUp.initialize({
 
-    'authorization-status': t =>
-      t.get('member', 'private', 'trello_token')
-        .then(token => ({ authorized: !!token })),
+  // 🔐 Handles Power-Up authorization
+  'authorization-status': t =>
+    t.get('member', 'private', 'trello_token')
+      .then(token => ({ authorized: !!token })),
 
-    'show-authorization': t =>
-      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
-
-    'card-back-section': (t) => ({
-      title: 'Task Checklist',
-      icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-      content: {
-        type: 'iframe',
-        url: t.signUrl('./client.html'), // Secure iframe URL signing
-        height: 500
-      }
+  'show-authorization': t =>
+    t.popup({
+      title: 'Authorize',
+      url: './authorize.html',
+      height: 150
     }),
 
-    'popup': t => [],
+  // 📌 This ONLY runs when a card is opened
+  'card-back-section': t => ({
+    title: 'Task Checklist',
+    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+    content: {
+      type: 'iframe',
+      url: t.signUrl('./client.html'),
+      height: 500
+    }
+  }),
 
-    'card-buttons': t => [],
+  // ✅ Stubs required by Trello (even if unused for now)
+  'card-buttons': t => [],
+  'card-badges': t => [],
+  'attachment-sections': t => [],
+  'card-detail-badges': t => [],
+  'popup': t => []
 
-    'card-badges': t => [],
-
-    'attachment-sections': t => [],
-
-    'card-detail-badges': t => []
-
-  });
+});
 </script>
-
 </body>
 </html>
