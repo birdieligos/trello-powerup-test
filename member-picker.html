@@ -7,23 +7,19 @@
 </head>
 <body style="font-family:sans-serif;padding:10px">
   <ul id="member-list" style="list-style:none;padding:0;margin:0"></ul>
-
   <script>
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
     const { members } = t.arg('args') || { members: [] };
 
+    console.log('[Member Picker] Loaded with members:', members.length);
+
     members.forEach(m => {
       const li = document.createElement('li');
-      li.style.marginBottom = '10px';
-      li.style.cursor = 'pointer';
-      li.style.display = 'flex';
-      li.style.alignItems = 'center';
-      li.innerHTML = `
-        <img src="${m.avatarUrl ? m.avatarUrl + '/30.png' : ''}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">
-        ${m.fullName}
-      `;
+      li.style = 'margin-bottom:10px;cursor:pointer;display:flex;align-items:center;';
+      li.innerHTML = `<img src="${m.avatarUrl ? m.avatarUrl + '/30.png' : ''}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">${m.fullName}`;
       li.addEventListener('click', () => {
+        console.log('[Member Picker] Selected:', m.fullName);
         t.closePopup({
           id: m.id,
           avatar: m.avatarUrl ? m.avatarUrl + '/30.png' : '',
