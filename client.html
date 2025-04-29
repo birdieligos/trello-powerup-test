@@ -1,75 +1,127 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Task Checklist Manager</title>
+  <meta charset="UTF-8">
+  <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    .checklist { border: 1px solid #ccc; padding: 10px; }
-    .checklist-title { font-weight: bold; margin-bottom: 10px; }
-    .checklist-items { list-style: none; padding: 0; }
-    .checklist-item { display: flex; align-items: center; margin-bottom: 8px; gap: 5px; }
-    .item-text, .item-due, .item-member { padding: 5px; }
-    .item-text { width: 150px; }
-    .item-due { width: 130px; }
-    .item-member { width: 100px; }
-    .item-actions button { margin-left: 5px; }
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .task-checklist {
+      margin-top: 10px;
+    }
+    .task-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    .task-name {
+      font-weight: bold;
+    }
+    .task-meta {
+      display: flex;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+    .task-actions {
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 10px;
+    }
+    .add-task-btn {
+      margin-top: 12px;
+      padding: 8px;
+      background-color: #026AA7;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
-
-<div class="checklist">
-  <h3 class="checklist-title">Task Checklist</h3>
-  <ul id="checklist-items" class="checklist-items">
-    <!-- Task items will be dynamically added here -->
-  </ul>
-  <button id="add-task-btn">➕ Add New Task</button>
-</div>
+  <div class="task-checklist">
+    <h3>Task Checklist</h3>
+    <div id="task-list"></div>
+    <button id="add-task" class="add-task-btn">+ Add New Task</button>
+  </div>
 
 <script>
 const t = TrelloPowerUp.iframe();
+const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-// Handle adding new tasks dynamically
-document.getElementById('add-task-btn').addEventListener('click', addTaskItem);
+document.getElementById('add-task').addEventListener('click', async () => {
+  const taskName = prompt('Enter Task Name:');
+  if (!taskName) return;
+  const dueDate = prompt('Enter Due Date (YYYY-MM-DD):');
+  const member = prompt('Enter Member Name or ID:');
 
-function addTaskItem() {
-  const ul = document.getElementById('checklist-items');
-  const li = document.createElement('li');
-  li.className = 'checklist-item';
-  li.innerHTML = `
-    <input type="text" class="item-text" placeholder="Task Title" required>
-    <input type="date" class="item-due" required>
-    <input type="text" class="item-member" placeholder="Member ID" required>
-    <div class="item-actions">
-      <button onclick="createTaskCard(this)">Create Task Card</button>
-      <button onclick="deleteTaskItem(this)">Delete</button>
+  const taskList = document.getElementById('task-list');
+
+  const taskDiv = document.createElement('div');
+  taskDiv.className = 'task-item';
+
+  taskDiv.innerHTML = `
+    <div>
+      <div class="task-name">${taskName}</div>
+      <div class="task-meta">
+        <span class="task-due">Due: ${dueDate}</span>
+        <span class="task-member">Member: ${member}</span>
+      </div>
     </div>
+    <div class="task-actions">&#x22EE;</div>
   `;
-  ul.appendChild(li);
-}
 
-// Handle deleting a task
-function deleteTaskItem(button) {
-  const li = button.closest('li');
-  li.remove();
-}
+  // Handle the three-dot menu
+  taskDiv.querySelector('.task-actions').addEventListener('click', async () => {
+    const action = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
+    if (action === 'create') {
+      if (!dueDate || !member) {
+        alert('Member and Due Date must be assigned to create a Task Card.');
+      } else {
+        try {
+          const { id: parentId, idBoard } = await t.card('id', 'idBoard');
+          const token = await t.get('member', 'private', 'trello_token');
 
-// Handle creating a Task Card (will fill this function next)
-function createTaskCard(button) {
-  const li = button.closest('li');
-  const taskName = li.querySelector('.item-text').value.trim();
-  const dueDate = li.querySelector('.item-due').value;
-  const memberId = li.querySelector('.item-member').value.trim();
+          // Find the "TASK | On the Horizon" list
+          const lists = await fetch(`https://api.trello.com/1/boards/${idBoard}/lists?key=${API_KEY}&token=${token}`)
+            .then(r => r.json());
+          const targetList = lists.find(l => l.name === 'TASK | On the Horizon');
+          if (!targetList) throw new Error('List not found.');
 
-  if (!taskName || !dueDate || !memberId) {
-    alert('❗ Member and Due Date must be assigned to create a task card.');
-    return;
-  }
+          // Create the new card
+          const params = new URLSearchParams({
+            name: taskName,
+            idList: targetList.id,
+            due: dueDate,
+            idMembers: member,
+            key: API_KEY,
+            token: token
+          });
+          const newCard = await fetch(`https://api.trello.com/1/cards?${params}`, { method: 'POST' })
+            .then(r => r.json());
 
-  // TODO: Connect to Trello API to create the card!
-  console.log('Creating Task Card for:', { taskName, dueDate, memberId });
-}
+          // Link via Hello Epics
+          await fetch(`https://api.helloepics.com/link?parent=${parentId}&child=${newCard.id}&key=${API_KEY}&token=${token}`, { method: 'POST' });
+
+          alert('Task Card created and linked!');
+        } catch (err) {
+          console.error(err);
+          alert('Error creating task card.');
+        }
+      }
+    } else if (action === 'delete') {
+      taskDiv.remove();
+    }
+  });
+
+  taskList.appendChild(taskDiv);
+});
 </script>
-
 </body>
 </html>
