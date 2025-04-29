@@ -9,13 +9,13 @@
       font-family: sans-serif;
       padding: 10px;
     }
-    .member {
+    li {
+      margin-bottom: 10px;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      cursor: pointer;
-      margin-bottom: 10px;
     }
-    .member img {
+    img {
       border-radius: 50%;
       width: 24px;
       height: 24px;
@@ -25,34 +25,29 @@
   </style>
 </head>
 <body>
-  <ul id="member-list" style="list-style:none;padding:0;margin:0"></ul>
+  <ul id="member-list" style="list-style: none; padding: 0; margin: 0;"></ul>
 
   <script>
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
-    const { members = [] } = t.arg('args') || {};
+    const { members } = t.arg('args') || { members: [] };
 
-    console.log('[Member Picker] Loaded with members:', members.length);
+    console.log(`[Member Picker] Loaded with members: ${members.length}`);
 
     members.forEach(m => {
       const li = document.createElement('li');
-      li.className = 'member';
-
-      const avatarUrl = m.uploadedAvatarUrl || '';
-
+      const avatar = m.avatarUrl ? `${m.avatarUrl}/30.png` : '';
       li.innerHTML = `
-        <img src="${avatarUrl ? avatarUrl + '/30.png' : ''}" alt="${m.fullName}">
+        <img src="${avatar}" />
         ${m.fullName}
       `;
-
       li.addEventListener('click', () => {
         t.closePopup({
           id: m.id,
-          avatar: avatarUrl ? avatarUrl + '/30.png' : '',
+          avatar,
           name: m.fullName
         });
       });
-
       list.appendChild(li);
     });
   </script>
