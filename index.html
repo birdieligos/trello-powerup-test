@@ -1,63 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Task Checklist</title>
-  <script src="https://p.trellocdn.com/v1/power-up.min.js"></script>
-</head>
-<body>
 <script>
-// ✅ This function silently fetches board members (no UI shown)
-function fetchMembersSilently(t) {
-  t.board('id')
-    .then(board => {
-      return t.get('member', 'private', 'trello_token')
-        .then(token => {
-          return fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-        });
-    })
-    .then(res => res.json())
-    .then(members => {
-      console.log('✅ Members fetched silently:', members);
-      // optionally store them in shared or private storage if needed
-    })
-    .catch(err => {
-      console.error('❌ Silent fetch failed:', err);
+  window.addEventListener('load', () => {
+    const fetchMembersSilently = (t) => {
+      t.board('id')
+        .then(board => t.get('member', 'private', 'trello_token')
+          .then(token => fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`))
+        )
+        .then(res => res.json())
+        .then(members => t.set('board', 'shared', { cachedMembers: members }))
+        .catch(err => console.error('❌ Failed to fetch members:', err));
+    };
+
+    window.TrelloPowerUp.initialize({
+      'authorization-status': t =>
+        t.get('member', 'private', 'trello_token')
+          .then(token => ({ authorized: !!token })),
+
+      'show-authorization': t =>
+        t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+
+      'card-back-section': (t) => ({
+        title: 'Task Checklist',
+        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./client.html'),
+          height: 500
+        }
+      }),
+
+      // Invisible background fetch
+      'board-buttons': (t) => {
+        fetchMembersSilently(t);
+        return [];
+      },
+
+      'popup': t => [],
+      'card-buttons': t => [],
+      'card-badges': t => [],
+      'attachment-sections': t => [],
+      'card-detail-badges': t => []
     });
-}
-
-window.TrelloPowerUp.initialize({
-
-  'authorization-status': t =>
-    t.get('member', 'private', 'trello_token')
-      .then(token => ({ authorized: !!token })),
-
-  'show-authorization': t =>
-    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
-
-  'card-back-section': (t) => ({
-    title: 'Task Checklist',
-    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-    content: {
-      type: 'iframe',
-      url: t.signUrl('./client.html'),
-      height: 500
-    }
-  }),
-
-  // ✅ Background fetch trigger — no visible button shown
-  'board-buttons': (t) => {
-    fetchMembersSilently(t); // now this function is defined
-    return [];
-  },
-
-  'popup': t => [],
-  'card-buttons': t => [],
-  'card-badges': t => [],
-  'attachment-sections': t => [],
-  'card-detail-badges': t => []
-
-});
+  });
 </script>
-</body>
-</html>
