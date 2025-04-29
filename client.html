@@ -5,34 +5,62 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 10px; }
-    .task-list { list-style: none; padding: 0; }
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+    }
+    .task-list {
+      list-style: none;
+      padding: 0;
+    }
     .task-item {
-      display: flex; align-items: center;
-      background: #f4f5f7; padding: 8px; border-radius: 6px;
-      margin-bottom: 6px; gap: 8px;
+      display: flex;
+      align-items: center;
+      background: #f4f5f7;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      gap: 8px;
     }
     .task-name {
-      flex: 1; font-weight: bold; font-size: 14px;
-      border: 1px solid #ccc; border-radius: 4px; padding: 6px;
+      flex: 1;
+      font-weight: bold;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px;
     }
     .set-date, .assign-member, .three-dots {
-      background: #e2e4e6; border: none;
-      padding: 6px 8px; border-radius: 4px;
-      font-size: 12px; cursor: pointer;
-      display: flex; align-items: center; gap: 4px;
+      background: #e2e4e6;
+      border: none;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-    .three-dots { font-size: 18px; padding: 5px 8px; }
+    .three-dots {
+      font-size: 18px;
+      padding: 5px 8px;
+    }
     .add-task-btn {
-      margin-top: 10px; padding: 10px;
-      background-color: #026aa7; color: white;
-      font-weight: bold; border: none;
-      border-radius: 6px; width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: #026aa7;
+      color: white;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      width: 100%;
       cursor: pointer;
     }
     .member-avatar {
-      width: 20px; height: 20px;
-      border-radius: 50%; object-fit: cover;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
     }
   </style>
 </head>
@@ -46,14 +74,10 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 
 async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
-  } catch (e) {
-    console.error('Error fetching members', e);
-  }
+  const board = await t.board('id');
+  const token = await t.get('member', 'private', 'trello_token');
+  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+  members = await res.json();
 }
 
 function createTaskItem() {
@@ -77,7 +101,7 @@ function createTaskItem() {
       title: 'Select Due Date',
       url: 'date-picker.html',
       height: 130,
-      target: e.target
+      target: e.target,  // FIXED
     }).then(selected => {
       if (selected) {
         setDateBtn.innerHTML = `🕑 ${selected}`;
@@ -91,7 +115,7 @@ function createTaskItem() {
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      target: e.target
+      target: e.target,  // FIXED
     }).then(selected => {
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
@@ -130,6 +154,5 @@ document.getElementById('add-task').addEventListener('click', createTaskItem);
 document.addEventListener('DOMContentLoaded', fetchMembers);
 t.render(() => {});
 </script>
-
 </body>
 </html>
