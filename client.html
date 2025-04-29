@@ -17,32 +17,35 @@
     .task-item {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       background: #f4f5f7;
-      margin-bottom: 8px;
-      padding: 10px;
+      margin-bottom: 6px;
+      padding: 8px;
       border-radius: 4px;
     }
-    .task-content {
-      flex-grow: 1;
+    .task-left {
+      display: flex;
+      flex-direction: column;
     }
     .task-input {
       font-size: 14px;
-      width: 100%;
+      padding: 5px;
+      width: 200px;
       border: none;
       background: transparent;
       border-bottom: 1px solid #ccc;
-      margin-bottom: 5px;
-      outline: none;
     }
     .task-meta {
       font-size: 12px;
       color: #555;
+      display: flex;
+      gap: 10px;
+      margin-top: 4px;
     }
-    .meta-link {
-      color: #0079bf;
+    .clickable {
       cursor: pointer;
       text-decoration: underline;
+      color: #0079bf;
     }
     .task-actions {
       position: relative;
@@ -71,7 +74,7 @@
     }
     .add-task-btn {
       margin-top: 10px;
-      padding: 10px;
+      padding: 8px;
       background-color: #026aa7;
       color: white;
       border: none;
@@ -97,11 +100,11 @@
       li.className = 'task-item';
 
       li.innerHTML = `
-        <div class="task-content">
+        <div class="task-left">
           <input type="text" placeholder="Task name..." class="task-input">
           <div class="task-meta">
-            Due: <span class="meta-link due-date">Set Due Date</span> | 
-            Member: <span class="meta-link member-name">Assign Member</span>
+            <span class="due clickable">(click to set Due Date)</span>
+            <span class="member clickable">(click to set Member)</span>
           </div>
         </div>
         <div class="task-actions">
@@ -115,8 +118,6 @@
 
       const threeDots = li.querySelector('.three-dots');
       const actionMenu = li.querySelector('.action-menu');
-      const dueDateSpan = li.querySelector('.due-date');
-      const memberSpan = li.querySelector('.member-name');
 
       threeDots.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -132,15 +133,7 @@
           alert('Task name is required before creating.');
           return;
         }
-        const dueDate = dueDateSpan.textContent !== "Set Due Date" ? dueDateSpan.textContent : null;
-        const member = memberSpan.textContent !== "Assign Member" ? memberSpan.textContent : null;
-
-        if (!dueDate || !member) {
-          alert('Both Due Date and Member must be set before creating.');
-          return;
-        }
-
-        alert(`✅ Would create Task Card:\n\nTask: ${taskName}\nDue: ${dueDate}\nMember: ${member}`);
+        alert('✅ Task card would be created here (API call next)');
         actionMenu.style.display = 'none';
       });
 
@@ -148,17 +141,19 @@
         li.remove();
       });
 
-      dueDateSpan.addEventListener('click', () => {
-        const newDue = prompt('Enter Due Date (YYYY-MM-DD):');
-        if (newDue) {
-          dueDateSpan.textContent = newDue;
+      // Add listener for setting due date
+      li.querySelector('.due').addEventListener('click', () => {
+        const dueInput = prompt('Enter Due Date (YYYY-MM-DD)');
+        if (dueInput) {
+          li.querySelector('.due').textContent = `Due: ${dueInput}`;
         }
       });
 
-      memberSpan.addEventListener('click', () => {
-        const newMember = prompt('Enter Member Name:');
-        if (newMember) {
-          memberSpan.textContent = newMember;
+      // Add listener for setting member
+      li.querySelector('.member').addEventListener('click', () => {
+        const memberInput = prompt('Enter Member Name');
+        if (memberInput) {
+          li.querySelector('.member').textContent = `Member: ${memberInput}`;
         }
       });
 
@@ -172,7 +167,7 @@
     });
 
     t.render(function(){
-      // re-render when Trello asks
+      // Ready to rerender if Trello requests
     });
   </script>
 
