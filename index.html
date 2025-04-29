@@ -1,41 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Task Checklist Power-Up</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
 </head>
 <body>
 <script>
-const API_KEY = '7443867af11d32c3e8f8152b114201fd';
+  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-TrelloPowerUp.initialize({
+  console.log('[Power-Up] Initializing...');
 
-  'authorization-status': t =>
-    t.get('member','private','trello_token')
-     .then(token => ({ authorized: !!token })),
+  TrelloPowerUp.initialize({
+    'authorization-status': t => {
+      console.log('[Power-Up] Checking authorization...');
+      return t.get('member', 'private', 'trello_token')
+        .then(token => ({ authorized: !!token }));
+    },
 
-  'show-authorization': t =>
-    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+    'show-authorization': t => {
+      console.log('[Power-Up] Showing auth popup...');
+      return t.popup({
+        title: 'Authorize',
+        url: './authorize.html',
+        height: 150
+      });
+    },
 
-  'card-back-section': t => ({
-    title: 'Task Checklist',
-    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-    content: {
-      type: 'iframe',
-      url: t.signUrl('./client.html'),
-      height: 400
-    }
-  }),
+    'card-back-section': t => {
+      console.log('[Power-Up] Attaching card back section...');
+      return {
+        title: 'Task Checklist',
+        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+        content: {
+          type: 'iframe',
+          url: t.signUrl('./client.html'),
+          height: 400
+        }
+      };
+    },
 
-  'popup': t => [],
+    'popup': t => [],
 
-  'card-buttons': t => [],
-  'card-badges': t => [],
-  'attachment-sections': t => [],
-  'card-detail-badges': t => []
-
-});
+    'card-buttons': t => [],
+    'card-badges': t => [],
+    'attachment-sections': t => [],
+    'card-detail-badges': t => []
+  });
 </script>
 </body>
 </html>
