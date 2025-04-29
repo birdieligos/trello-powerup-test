@@ -25,14 +25,28 @@
     .three-dots { font-size: 18px; padding: 5px 8px; }
     .add-task-btn {
       margin-top: 10px; padding: 10px;
-      background-color: #026aa7; color: white;
+      background-color: #0079bf; color: white;
       font-weight: bold; border: none;
       border-radius: 6px; width: 100%;
       cursor: pointer;
     }
+    .task-input-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
     .member-avatar {
       width: 20px; height: 20px;
       border-radius: 50%; object-fit: cover;
+    }
+    .add-btn {
+      background-color: #0079bf; color: white;
+      border: none; border-radius: 4px;
+      padding: 6px 10px; cursor: pointer;
+    }
+    .cancel-btn {
+      background: none; border: none;
+      color: #6b778c; cursor: pointer;
+      padding: 6px 10px;
     }
   </style>
 </head>
@@ -52,101 +66,94 @@ async function fetchMembers() {
     const token = await t.get('member', 'private', 'trello_token');
     const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
     members = await res.json();
-    console.log('[✅ Members Loaded]', members);
   } catch (err) {
     console.error('❌ Failed to fetch members:', err);
   }
 }
 
 function saveChecklist() {
-  console.log('[💾 Saving Checklist]', checklistData);
   t.set('card', 'shared', { taskChecklist: checklistData });
 }
 
-function createTaskItem(task = {}) {
-  console.log('[🛠️ Creating Task Item]', task);
+function createTaskInputRow() {
+  const taskList = document.getElementById('task-list');
+  const li = document.createElement('li');
+  li.className = 'task-item';
+
+  const inputRow = document.createElement('div');
+  inputRow.className = 'task-input-row';
+
+  const nameInput = document.createElement('input');
+  nameInput.className = 'task-name';
+  nameInput.placeholder = 'Task name...';
+
+  const dateBtn = document.createElement('button');
+  dateBtn.className = 'set-date';
+  dateBtn.innerHTML = '<span>🕑</span> Set Date';
+
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'assign-member';
+  assignBtn.innerHTML = '<span>👤</span> Assign';
+
+  let task = { name: '', dueDate: '', memberAvatar: '' };
+
+  dateBtn.addEventListener('click', (e) => {
+    t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
+      .then(selected => {
+        if (selected) {
+          task.dueDate = selected;
+          dateBtn.innerHTML = `🕑 ${selected}`;
+        }
+      });
+  });
+
+  assignBtn.addEventListener('click', (e) => {
+    t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
+      .then(selected => {
+        if (selected?.avatar) {
+          task.memberAvatar = selected.avatar;
+          assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+        }
+      });
+  });
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-btn';
+  addBtn.textContent = 'Add';
+  addBtn.addEventListener('click', () => {
+    task.name = nameInput.value;
+    checklistData.push(task);
+    saveChecklist();
+    li.remove();
+    createTaskItem(task);
+  });
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'cancel-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => li.remove());
+
+  inputRow.appendChild(nameInput);
+  inputRow.appendChild(dateBtn);
+  inputRow.appendChild(assignBtn);
+  inputRow.appendChild(addBtn);
+  inputRow.appendChild(cancelBtn);
+
+  li.appendChild(inputRow);
+  taskList.appendChild(li);
+}
+
+function createTaskItem(task) {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
 
   li.innerHTML = `
-    <input type="text" class="task-name" placeholder="Task name..." value="${task.name || ''}" />
-    <button class="set-date">${task.dueDate ? `🕑 ${task.dueDate}` : '<span>🕑</span>Set Date'}</button>
-    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '<span>👤</span>Assign'}</button>
-    <button class="three-dots">&#x22EE;</button>
+    <input type="text" class="task-name" value="${task.name || ''}" disabled />
+    <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
+    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned'}</button>
+    <button class="three-dots">⋮</button>
   `;
-
-  const taskNameInput = li.querySelector('.task-name');
-  const setDateBtn = li.querySelector('.set-date');
-  const assignBtn = li.querySelector('.assign-member');
-  const threeDots = li.querySelector('.three-dots');
-
-  taskNameInput.addEventListener('input', () => {
-    task.name = taskNameInput.value;
-    saveChecklist();
-  });
-
-  setDateBtn.addEventListener('click', (e) => {
-    console.log('[📅 Date Button Clicked]', task);
-    t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      mouseEvent: e
-    }).then(selected => {
-      if (selected) {
-        task.dueDate = selected;
-        setDateBtn.innerHTML = `🕑 ${selected}`;
-        console.log('[📆 Date Selected]', selected);
-        saveChecklist();
-      }
-    });
-  });
-
-  assignBtn.addEventListener('click', (e) => {
-    console.log('[👤 Assign Button Clicked]', task);
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members },
-      mouseEvent: e
-    }).then(selected => {
-      if (selected?.avatar) {
-        task.memberAvatar = selected.avatar;
-        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-        console.log('[👥 Member Selected]', selected);
-        saveChecklist();
-      }
-    });
-  });
-
-  threeDots.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const menu = document.createElement('div');
-    menu.className = 'action-menu';
-    const createOption = document.createElement('div');
-    createOption.textContent = 'Create Task Card';
-    createOption.addEventListener('click', () => {
-      alert('Task card creation logic goes here.');
-      menu.remove();
-    });
-    const deleteOption = document.createElement('div');
-    deleteOption.textContent = 'Delete Task';
-    deleteOption.addEventListener('click', () => {
-      li.remove();
-      checklistData = checklistData.filter(t => t !== task);
-      console.log('[🗑️ Task Deleted]', task);
-      saveChecklist();
-    });
-    menu.appendChild(createOption);
-    menu.appendChild(deleteOption);
-    document.body.appendChild(menu);
-    const rect = threeDots.getBoundingClientRect();
-    menu.style.position = 'absolute';
-    menu.style.top = rect.bottom + 'px';
-    menu.style.left = rect.left + 'px';
-  });
 
   taskList.appendChild(li);
 }
@@ -154,35 +161,20 @@ function createTaskItem(task = {}) {
 async function loadChecklist() {
   try {
     const saved = await t.get('card', 'shared', 'taskChecklist');
-    console.log('[📦 Loaded Saved Checklist]', saved);
     if (Array.isArray(saved) && saved.length > 0) {
       checklistData = saved;
       saved.forEach(task => createTaskItem(task));
-    } else {
-      const task = { name: '', dueDate: '', memberAvatar: '' };
-      checklistData.push(task);
-      createTaskItem(task);
     }
   } catch (err) {
     console.error('❌ Error loading checklist:', err);
-    const task = { name: '', dueDate: '', memberAvatar: '' };
-    checklistData.push(task);
-    createTaskItem(task);
   }
 }
 
+document.getElementById('add-task').addEventListener('click', createTaskInputRow);
+
 t.render(async () => {
-  console.log('[⚙️ t.render triggered]');
   await fetchMembers();
   await loadChecklist();
-
-  document.getElementById('add-task').addEventListener('click', () => {
-    console.log('[➕ Add Task Button Clicked]');
-    const task = { name: '', dueDate: '', memberAvatar: '' };
-    checklistData.push(task);
-    createTaskItem(task);
-    saveChecklist();
-  });
 });
 </script>
 </body>
