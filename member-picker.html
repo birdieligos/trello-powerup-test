@@ -11,36 +11,42 @@
   <script>
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
-    const { members } = t.arg('args') || { members: [] };
 
-    console.log('[Member Picker] Loaded with members:', members.length);
+    async function loadMembers() {
+      try {
+        const board = await t.board('id');
+        const token = await t.get('member', 'private', 'trello_token');
+        const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+        const members = await res.json();
+        console.log(`[Member Picker] Loaded ${members.length} members`);
 
-    members.forEach(m => {
-      const avatar = m.avatarHash
-        ? `https://trello-members.s3.amazonaws.com/${m.id}/${m.avatarHash}/30.png`
-        : '';
-
-      const li = document.createElement('li');
-      li.style.marginBottom = '10px';
-      li.style.cursor = 'pointer';
-      li.style.display = 'flex';
-      li.style.alignItems = 'center';
-
-      li.innerHTML = `
-        <img src="${avatar}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">
-        ${m.fullName}
-      `;
-
-      li.addEventListener('click', () => {
-        t.closePopup({
-          id: m.id,
-          avatar,
-          name: m.fullName
+        members.forEach(m => {
+          const li = document.createElement('li');
+          li.style.marginBottom = '10px';
+          li.style.cursor = 'pointer';
+          li.style.display = 'flex';
+          li.style.alignItems = 'center';
+          li.innerHTML = `
+            <img src="${m.avatarUrl ? m.avatarUrl + '/30.png' : ''}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">
+            ${m.fullName}
+          `;
+          li.addEventListener('click', () => {
+            t.closePopup({
+              id: m.id,
+              avatar: m.avatarUrl ? m.avatarUrl + '/30.png' : '',
+              name: m.fullName
+            });
+          });
+          list.appendChild(li);
         });
-      });
 
-      list.appendChild(li);
-    });
+      } catch (err) {
+        list.innerHTML = `<li style="color:red">⚠️ Failed to load members</li>`;
+        console.error('[Member Picker] Error loading members:', err);
+      }
+    }
+
+    loadMembers();
   </script>
 </body>
 </html>
