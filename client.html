@@ -58,7 +58,17 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = [];
+
+async function fetchMembers() {
+  try {
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'trello_token');
+    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+    members = await res.json();
+  } catch (err) {
+    console.error('❌ Failed to fetch members:', err);
+  }
+}
 
 function createTaskInputRow() {
   const taskList = document.getElementById('task-list');
@@ -80,7 +90,7 @@ function createTaskInputRow() {
   assignBtn.className = 'assign-member';
   assignBtn.innerHTML = '<span>👤</span> Assign';
 
-  let task = { name: '', dueDate: '', memberAvatar: '' };
+  const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
@@ -106,11 +116,13 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value;
-    checklistData.push(task);
-    saveChecklist();
+    console.log('📝 Task added (UI only):', {
+      name: nameInput.value,
+      dueDate: task.dueDate,
+      memberAvatar: task.memberAvatar
+    });
     li.remove();
-    createTaskItem(task);
+    createTaskItem({ ...task, name: nameInput.value });
   });
 
   const cancelBtn = document.createElement('button');
@@ -143,40 +155,13 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
-
-async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
-  } catch (err) {
-    console.error('❌ Failed to fetch members:', err);
-  }
-}
-
-async function loadChecklist() {
-  try {
-    const saved = await t.get('card', 'shared', 'taskChecklist');
-    if (Array.isArray(saved) && saved.length > 0) {
-      checklistData = saved;
-      saved.forEach(task => createTaskItem(task));
-    }
-  } catch (err) {
-    console.error('❌ Error loading checklist:', err);
-  }
-}
-
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-// ✅ Renders iframe UI fast, loads data async
+// Render shell immediately, delay fetch
 t.render(() => {
-  createTaskInputRow(); // Always show input UI
-  fetchMembers();       // Async
-  loadChecklist();      // Async
+  console.log('🧩 Power-Up loaded (no data save/load hooked)');
+  fetchMembers();         // Fetch only members
+  createTaskInputRow();   // Always show input row
 });
 </script>
 </body>
