@@ -5,154 +5,141 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 10px;
-    }
-    .task-list {
-      list-style: none;
-      padding: 0;
-      margin-top: 10px;
-    }
-    .task-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #f4f5f7;
-      margin-bottom: 6px;
-      padding: 8px;
-      border-radius: 4px;
-    }
-    .task-name {
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .task-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      color: #555;
-    }
-    .meta-due, .meta-member {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .meta-due i, .meta-member i {
-      font-style: normal;
-      font-weight: bold;
-    }
-    .actions {
-      display: flex;
-      gap: 8px;
-    }
-    .btn {
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-add {
-      background: #026aa7;
-      color: white;
-      font-weight: bold;
-      margin-top: 10px;
-      width: 100%;
-    }
-    .edit-zone {
-      margin-top: 10px;
-    }
-    .edit-zone input, .edit-zone select {
-      padding: 6px;
-      margin-right: 10px;
-    }
-    .edit-zone button {
-      padding: 6px 12px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    body { font-family: sans-serif; padding: 10px; }
+    .task-list { list-style: none; padding: 0; margin-top: 10px; }
+    .task-item { display: flex; justify-content: space-between; align-items: center; background: #f4f5f7; margin-bottom: 6px; padding: 8px; border-radius: 4px; }
+    .task-input { font-size: 14px; padding: 5px; width: 200px; border: none; background: transparent; border-bottom: 1px solid #ccc; }
+    .meta { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+    .meta span { cursor: pointer; }
+    .member-avatar { width: 20px; height: 20px; border-radius: 50%; }
+    .task-actions { position: relative; }
+    .three-dots { cursor: pointer; font-size: 20px; padding: 5px; }
+    .action-menu { display: none; position: absolute; right: 0; top: 25px; background: white; border: 1px solid #ccc; border-radius: 4px; z-index: 10; }
+    .action-menu div { padding: 8px 12px; cursor: pointer; }
+    .action-menu div:hover { background: #eee; }
+    .add-task-btn { margin-top: 10px; padding: 8px; background-color: #026aa7; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; width: 100%; }
+    .member-dropdown { position: absolute; background: white; border: 1px solid #ccc; width: 200px; max-height: 150px; overflow-y: auto; z-index: 15; display: none; }
+    .member-option { display: flex; align-items: center; padding: 8px; cursor: pointer; }
+    .member-option img { width: 20px; height: 20px; border-radius: 50%; margin-right: 8px; }
+    .member-option:hover { background: #eee; }
   </style>
 </head>
 <body>
 
-<h3>Task Checklist</h3>
-
-<div class="edit-zone" id="edit-zone">
-  <input type="text" id="task-input" placeholder="Add an item" />
-  <select id="member-select">
-    <option value="">Assign Member</option>
-  </select>
-  <input type="date" id="due-input" />
-  <button id="add-task-btn">Add</button>
-</div>
-
 <ul id="task-list" class="task-list"></ul>
+<button id="add-task" class="add-task-btn">+ Add New Task</button>
+
+<div id="member-dropdown" class="member-dropdown"></div>
 
 <script>
-  const t = TrelloPowerUp.iframe();
-  let members = [];
+const t = TrelloPowerUp.iframe();
+let boardMembers = [];
 
-  async function loadMembers() {
-    const context = await t.getContext();
-    const boardId = context.board;
-    const token = await t.get('member', 'private', 'trello_token');
-    const apiKey = "7443867af11d32c3e8f8152b114201fd";
+async function loadMembers() {
+  const { idBoard } = await t.card('idBoard');
+  const token = await t.get('member', 'private', 'trello_token');
+  const resp = await fetch(`https://api.trello.com/1/boards/${idBoard}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+  boardMembers = await resp.json();
+}
 
-    const res = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=${apiKey}&token=${token}`);
-    members = await res.json();
+function createTaskItem(name = '', due = '', member = null) {
+  const taskList = document.getElementById('task-list');
+  const li = document.createElement('li');
+  li.className = 'task-item';
 
-    const select = document.getElementById('member-select');
-    members.forEach(member => {
-      const opt = document.createElement('option');
-      opt.value = member.id;
-      opt.textContent = member.fullName;
-      select.appendChild(opt);
-    });
-  }
-
-  function addTask(name, memberId, dueDate) {
-    const taskList = document.getElementById('task-list');
-
-    const li = document.createElement('li');
-    li.className = 'task-item';
-
-    const member = members.find(m => m.id === memberId);
-    const memberName = member ? member.fullName : 'No member';
-    const memberInitial = member ? member.initials : '';
-
-    li.innerHTML = `
-      <div class="task-name">${name}</div>
-      <div class="task-meta">
-        <div class="meta-due"><i>⏰</i> ${dueDate}</div>
-        <div class="meta-member"><i>👤</i> ${memberName}</div>
+  li.innerHTML = `
+    <div>
+      <input type="text" class="task-input" placeholder="Task name..." value="${name}">
+      <div class="meta">
+        <span class="due-date">${due ? formatDate(due) : 'Set Due Date'}</span> |
+        <span class="member-name">${member ? `<img src="${member.avatarUrl}/30.png" class="member-avatar"> ${member.fullName}` : 'Assign Member'}</span>
       </div>
-    `;
+    </div>
+    <div class="task-actions">
+      <div class="three-dots">&#x22EE;</div>
+      <div class="action-menu">
+        <div class="create-task-card">Create Task Card</div>
+        <div class="delete-task">Delete Task</div>
+      </div>
+    </div>
+  `;
 
-    taskList.appendChild(li);
-  }
+  const threeDots = li.querySelector('.three-dots');
+  const actionMenu = li.querySelector('.action-menu');
+  const dueDateSpan = li.querySelector('.due-date');
+  const memberNameSpan = li.querySelector('.member-name');
 
-  document.getElementById('add-task-btn').addEventListener('click', () => {
-    const name = document.getElementById('task-input').value.trim();
-    const memberId = document.getElementById('member-select').value;
-    const dueDate = document.getElementById('due-input').value;
-
-    if (!name) {
-      alert('Task name required.');
-      return;
-    }
-
-    addTask(name, memberId, dueDate || new Date().toISOString().substring(0,10));
-
-    // Clear input fields
-    document.getElementById('task-input').value = '';
-    document.getElementById('member-select').value = '';
-    document.getElementById('due-input').value = '';
+  threeDots.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.action-menu').forEach(m => m.style.display = 'none');
+    actionMenu.style.display = actionMenu.style.display === 'block' ? 'none' : 'block';
   });
 
-  t.render(() => {
-    loadMembers();
+  li.querySelector('.create-task-card').addEventListener('click', () => {
+    const taskName = li.querySelector('.task-input').value.trim();
+    if (!taskName) return alert('Task name required.');
+    alert('✅ Would create task card here.');
+    actionMenu.style.display = 'none';
   });
+
+  li.querySelector('.delete-task').addEventListener('click', () => {
+    li.remove();
+  });
+
+  dueDateSpan.addEventListener('click', async () => {
+    const input = document.createElement('input');
+    input.type = 'date';
+    input.valueAsDate = due ? new Date(due) : new Date();
+    input.addEventListener('change', () => {
+      dueDateSpan.textContent = formatDate(input.value);
+    });
+    input.style.position = 'absolute';
+    input.style.zIndex = '20';
+    document.body.appendChild(input);
+    input.focus();
+    input.click();
+    input.addEventListener('blur', () => input.remove());
+  });
+
+  memberNameSpan.addEventListener('click', () => {
+    const dropdown = document.getElementById('member-dropdown');
+    dropdown.innerHTML = '';
+    boardMembers.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'member-option';
+      div.innerHTML = `<img src="${m.avatarUrl}/30.png"> ${m.fullName}`;
+      div.addEventListener('click', () => {
+        memberNameSpan.innerHTML = `<img src="${m.avatarUrl}/30.png" class="member-avatar"> ${m.fullName}`;
+        dropdown.style.display = 'none';
+      });
+      dropdown.appendChild(div);
+    });
+    dropdown.style.display = 'block';
+    dropdown.style.top = (memberNameSpan.getBoundingClientRect().bottom + window.scrollY) + 'px';
+    dropdown.style.left = (memberNameSpan.getBoundingClientRect().left + window.scrollX) + 'px';
+  });
+
+  taskList.appendChild(li);
+}
+
+function formatDate(dateStr) {
+  const options = { month: 'short', day: 'numeric' };
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', options);
+}
+
+document.getElementById('add-task').addEventListener('click', () => {
+  createTaskItem();
+});
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.action-menu').forEach(m => m.style.display = 'none');
+  document.getElementById('member-dropdown').style.display = 'none';
+});
+
+t.render(function(){});
+
+loadMembers();
 </script>
 
 </body>
