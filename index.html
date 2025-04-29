@@ -1,22 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Task Checklist</title>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
 <script>
+  // ✅ Called only after everything is fully loaded
   window.addEventListener('load', () => {
+
+    // ✅ Background fetch: gets board members silently
     const fetchMembersSilently = (t) => {
       t.board('id')
-        .then(board => t.get('member', 'private', 'trello_token')
-          .then(token => fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`))
+        .then(board =>
+          t.get('member', 'private', 'trello_token')
+            .then(token =>
+              fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`)
+            )
         )
         .then(res => res.json())
-        .then(members => t.set('board', 'shared', { cachedMembers: members }))
+        .then(members => {
+          console.log('✅ Members fetched silently:', members);
+          return t.set('board', 'shared', { cachedMembers: members });
+        })
         .catch(err => console.error('❌ Failed to fetch members:', err));
     };
 
+    // ✅ Initialize Power-Up
     window.TrelloPowerUp.initialize({
+
       'authorization-status': t =>
         t.get('member', 'private', 'trello_token')
           .then(token => ({ authorized: !!token })),
 
       'show-authorization': t =>
-        t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+        t.popup({
+          title: 'Authorize',
+          url: './authorize.html',
+          height: 150
+        }),
 
       'card-back-section': (t) => ({
         title: 'Task Checklist',
@@ -28,7 +51,7 @@
         }
       }),
 
-      // Invisible background fetch
+      // ✅ Background trigger, no visible button
       'board-buttons': (t) => {
         fetchMembersSilently(t);
         return [];
@@ -40,5 +63,8 @@
       'attachment-sections': t => [],
       'card-detail-badges': t => []
     });
+
   });
 </script>
+</body>
+</html>
