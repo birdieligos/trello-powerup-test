@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Task Checklist</title>
-  <script src="https://p.trellocdn.com/v1/power-up.min.js"></script>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 10px; }
     .task-list { list-style: none; padding: 0; }
@@ -59,18 +59,19 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 
-async function loadMembers() {
-  try {
-    const stored = await t.get('board', 'shared', 'boardMembers');
-    if (Array.isArray(stored)) {
-      members = stored;
-      console.log('✅ Members loaded from shared storage');
-    } else {
-      console.warn('⚠️ No members found in shared storage');
-    }
-  } catch (err) {
-    console.error('❌ Failed to load stored members:', err);
-  }
+function loadCachedMembers() {
+  t.get('board', 'shared', 'cachedMembers')
+    .then(cached => {
+      if (Array.isArray(cached)) {
+        members = cached;
+        console.log('✅ Loaded members from shared cache');
+      } else {
+        console.warn('⚠️ No cached members found');
+      }
+    })
+    .catch(err => {
+      console.error('❌ Failed to get cached members:', err);
+    });
 }
 
 function createTaskInputRow() {
@@ -96,32 +97,23 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
-    t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      mouseEvent: e
-    }).then(selected => {
-      if (selected) {
-        task.dueDate = selected;
-        dateBtn.innerHTML = `🕑 ${selected}`;
-      }
-    });
+    t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
+      .then(selected => {
+        if (selected) {
+          task.dueDate = selected;
+          dateBtn.innerHTML = `🕑 ${selected}`;
+        }
+      });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members },
-      mouseEvent: e
-    }).then(selected => {
-      if (selected?.avatar) {
-        task.memberAvatar = selected.avatar;
-        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-      }
-    });
+    t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
+      .then(selected => {
+        if (selected?.avatar) {
+          task.memberAvatar = selected.avatar;
+          assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+        }
+      });
   });
 
   const addBtn = document.createElement('button');
@@ -169,10 +161,9 @@ function createTaskItem(task) {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-t.render(async () => {
-  console.log('🧩 Power-Up iframe rendered');
-  await loadMembers();      // Silent load from shared storage
-  createTaskInputRow();     // Show task input on every open
+t.render(() => {
+  loadCachedMembers();       // silently loads cached members
+  createTaskInputRow();      // always show one input row by default
 });
 </script>
 </body>
