@@ -7,20 +7,27 @@
 </head>
 <body>
 <script>
-const fetchMembersSilently = async (t) => {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    const members = await res.json();
-    await t.set('board', 'shared', { cachedMembers: members });
-    console.log('✅ Board members silently fetched and cached');
-  } catch (err) {
-    console.error('❌ Silent fetchMembers failed:', err);
-  }
-};
+// ✅ This function silently fetches board members (no UI shown)
+function fetchMembersSilently(t) {
+  t.board('id')
+    .then(board => {
+      return t.get('member', 'private', 'trello_token')
+        .then(token => {
+          return fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+        });
+    })
+    .then(res => res.json())
+    .then(members => {
+      console.log('✅ Members fetched silently:', members);
+      // optionally store them in shared or private storage if needed
+    })
+    .catch(err => {
+      console.error('❌ Silent fetch failed:', err);
+    });
+}
 
 window.TrelloPowerUp.initialize({
+
   'authorization-status': t =>
     t.get('member', 'private', 'trello_token')
       .then(token => ({ authorized: !!token })),
@@ -38,9 +45,9 @@ window.TrelloPowerUp.initialize({
     }
   }),
 
-  // 👇 Background fetch trigger — no visible buttons
+  // ✅ Background fetch trigger — no visible button shown
   'board-buttons': (t) => {
-    fetchMembersSilently(t);
+    fetchMembersSilently(t); // now this function is defined
     return [];
   },
 
@@ -49,6 +56,7 @@ window.TrelloPowerUp.initialize({
   'card-badges': t => [],
   'attachment-sections': t => [],
   'card-detail-badges': t => []
+
 });
 </script>
 </body>
