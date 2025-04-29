@@ -44,7 +44,7 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = []; // in-memory tracker
+let checklistData = [];
 
 async function fetchMembers() {
   const board = await t.board('id');
@@ -54,8 +54,7 @@ async function fetchMembers() {
 }
 
 function saveChecklist() {
-  console.log('💾 Saving checklist data to card:', checklistData);
-  t.set('card', 'shared', { 'taskChecklist': checklistData });
+  t.set('card', 'shared', { taskChecklist: checklistData });
 }
 
 function createTaskItem(task = {}) {
@@ -75,7 +74,14 @@ function createTaskItem(task = {}) {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
+  taskNameInput.addEventListener('input', () => {
+    task.name = taskNameInput.value;
+    saveChecklist();
+  });
+
   setDateBtn.addEventListener('click', (e) => {
+    const t = TrelloPowerUp.iframe();
+    console.log('📆 Set Date button clicked');
     t.popup({
       title: 'Select Due Date',
       url: 'date-picker.html',
@@ -87,10 +93,14 @@ function createTaskItem(task = {}) {
         task.dueDate = selected;
         saveChecklist();
       }
+    }).catch(err => {
+      console.error('❌ Error in date popup:', err);
     });
   });
 
   assignBtn.addEventListener('click', (e) => {
+    const t = TrelloPowerUp.iframe();
+    console.log('👤 Assign Member button clicked');
     t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -103,12 +113,9 @@ function createTaskItem(task = {}) {
         task.memberAvatar = selected.avatar;
         saveChecklist();
       }
+    }).catch(err => {
+      console.error('❌ Error in member popup:', err);
     });
-  });
-
-  taskNameInput.addEventListener('input', () => {
-    task.name = taskNameInput.value;
-    saveChecklist();
   });
 
   threeDots.addEventListener('click', (e) => {
@@ -124,7 +131,7 @@ function createTaskItem(task = {}) {
     const deleteOption = document.createElement('div');
     deleteOption.textContent = 'Delete Task';
     deleteOption.addEventListener('click', () => {
-      taskList.removeChild(li);
+      li.remove();
       checklistData = checklistData.filter(t => t !== task);
       saveChecklist();
     });
@@ -143,7 +150,6 @@ function createTaskItem(task = {}) {
 async function loadChecklist() {
   const saved = await t.get('card', 'shared', 'taskChecklist');
   if (saved && Array.isArray(saved)) {
-    console.log('📥 Loading checklist from card storage:', saved);
     checklistData = saved;
     checklistData.forEach(task => createTaskItem(task));
   }
