@@ -45,131 +45,91 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 
-async function fetchMembers() {
-  const board = await t.board('id');
-  const token = await t.get('member', 'private', 'trello_token');
-  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-  members = await res.json();
-}
-
-function renderChecklist(items) {
+function createTaskItem() {
   const taskList = document.getElementById('task-list');
-  taskList.innerHTML = '';
-  items.forEach(({ text, date, member }) => {
-    const li = document.createElement('li');
-    li.className = 'task-item';
+  const li = document.createElement('li');
+  li.className = 'task-item';
 
-    const dateBtn = document.createElement('button');
-    dateBtn.className = 'set-date';
-    dateBtn.innerHTML = date ? `🕑 ${date}` : '🕑 Set Date';
-    dateBtn.addEventListener('click', (e) => {
-      t.popup({
-        title: 'Select Due Date',
-        url: 'date-picker.html',
-        height: 130,
-        mouseEvent: e
-      }).then(selected => {
-        if (selected) {
-          dateBtn.innerHTML = `🕑 ${selected}`;
-          saveChecklist();
-        }
-      });
-    });
+  li.innerHTML = `
+    <input type="text" class="task-name" placeholder="Task name..." />
+    <button class="set-date"><span>🕑</span>Set Date</button>
+    <button class="assign-member"><span>👤</span>Assign</button>
+    <button class="three-dots">&#x22EE;</button>
+  `;
 
-    const memberBtn = document.createElement('button');
-    memberBtn.className = 'assign-member';
-    if (member && member.avatar) {
-      memberBtn.innerHTML = `<img src="${member.avatar}" class="member-avatar" />`;
-    } else {
-      memberBtn.innerHTML = '👤 Assign';
-    }
-    memberBtn.addEventListener('click', (e) => {
-      t.popup({
-        title: 'Assign Member',
-        url: 'member-picker.html',
-        height: 300,
-        args: { members },
-        mouseEvent: e
-      }).then(selected => {
-        if (selected && selected.avatar) {
-          memberBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-          memberBtn.dataset.avatar = selected.avatar;
-          saveChecklist();
-        }
-      });
-    });
+  const setDateBtn = li.querySelector('.set-date');
+  const assignBtn = li.querySelector('.assign-member');
+  const threeDots = li.querySelector('.three-dots');
 
-    const nameInput = document.createElement('input');
-    nameInput.type = 'text';
-    nameInput.className = 'task-name';
-    nameInput.value = text || '';
-    nameInput.placeholder = 'Task name...';
-    nameInput.addEventListener('change', saveChecklist);
-
-    const dots = document.createElement('button');
-    dots.className = 'three-dots';
-    dots.innerHTML = '&#x22EE;';
-    dots.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const menu = document.createElement('div');
-      menu.className = 'action-menu';
-      const del = document.createElement('div');
-      del.textContent = 'Delete Task';
-      del.addEventListener('click', () => {
-        li.remove();
-        saveChecklist();
-      });
-      menu.appendChild(del);
-      document.body.appendChild(menu);
-      const rect = dots.getBoundingClientRect();
-      menu.style.position = 'absolute';
-      menu.style.top = rect.bottom + 'px';
-      menu.style.left = rect.left + 'px';
-    });
-
-    li.appendChild(nameInput);
-    li.appendChild(dateBtn);
-    li.appendChild(memberBtn);
-    li.appendChild(dots);
-    taskList.appendChild(li);
-  });
-}
-
-async function saveChecklist() {
-  const items = Array.from(document.querySelectorAll('.task-item')).map(li => {
-    return {
-      text: li.querySelector('.task-name').value,
-      date: li.querySelector('.set-date').textContent.replace('🕑 ', '').trim(),
-      member: {
-        avatar: li.querySelector('.assign-member img')?.src || ''
+  setDateBtn.addEventListener('click', (e) => {
+    t.popup({
+      title: 'Select Due Date',
+      url: 'date-picker.html',
+      height: 130,
+      mouseEvent: e
+    }).then(selected => {
+      if (selected) {
+        setDateBtn.innerHTML = `🕑 ${selected}`;
       }
-    };
+    }).catch(err => console.error('❌ Date popup error:', err));
   });
-  await t.set('card', 'shared', 'checklist', items);
+
+  assignBtn.addEventListener('click', (e) => {
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members },
+      mouseEvent: e
+    }).then(selected => {
+      if (selected && selected.avatar) {
+        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+      }
+    }).catch(err => console.error('❌ Member popup error:', err));
+  });
+
+  threeDots.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = document.createElement('div');
+    menu.className = 'action-menu';
+    const createOption = document.createElement('div');
+    createOption.textContent = 'Create Task Card';
+    createOption.addEventListener('click', () => {
+      alert('Create task card logic goes here.');
+      menu.remove();
+    });
+    const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Task';
+    deleteOption.addEventListener('click', () => {
+      li.remove();
+    });
+    menu.appendChild(createOption);
+    menu.appendChild(deleteOption);
+    document.body.appendChild(menu);
+    const rect = threeDots.getBoundingClientRect();
+    menu.style.position = 'absolute';
+    menu.style.top = rect.bottom + 'px';
+    menu.style.left = rect.left + 'px';
+  });
+
+  taskList.appendChild(li);
 }
 
-async function loadChecklist() {
-  const items = await t.get('card', 'shared', 'checklist') || [];
-  renderChecklist(items);
-}
-
-document.getElementById('add-task').addEventListener('click', () => {
-  const items = Array.from(document.querySelectorAll('.task-item')).map(li => ({
-    text: li.querySelector('.task-name').value,
-    date: li.querySelector('.set-date').textContent.replace('🕑 ', '').trim(),
-    member: {
-      avatar: li.querySelector('.assign-member img')?.src || ''
-    }
-  }));
-  items.push({ text: '', date: '', member: null });
-  renderChecklist(items);
-  saveChecklist();
-});
+document.getElementById('add-task').addEventListener('click', createTaskItem);
 
 t.render(async () => {
-  await fetchMembers();
-  await loadChecklist();
+  console.log('🔁 t.render triggered');
+  try {
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'trello_token');
+    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+    members = await res.json();
+    console.log(`✅ Members loaded: ${members.length}`);
+  } catch (err) {
+    console.error('❌ Failed to fetch members:', err);
+  }
 });
 </script>
+
 </body>
 </html>
