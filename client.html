@@ -7,120 +7,153 @@
   <style>
     body {
       font-family: sans-serif;
-      margin: 0;
       padding: 10px;
     }
     .task-list {
       list-style: none;
       padding: 0;
-      margin: 0;
+      margin-top: 10px;
     }
     .task-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
       background: #f4f5f7;
-      border-radius: 10px;
-      padding: 8px 12px;
       margin-bottom: 6px;
+      padding: 8px;
+      border-radius: 4px;
     }
     .task-name {
       font-size: 14px;
       font-weight: 500;
-      flex: 1;
-      border: none;
-      background: transparent;
-      outline: none;
     }
-    .task-actions {
+    .task-meta {
       display: flex;
       align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+    .meta-due, .meta-member {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .meta-due i, .meta-member i {
+      font-style: normal;
+      font-weight: bold;
+    }
+    .actions {
+      display: flex;
       gap: 8px;
     }
-    .task-actions img {
-      width: 20px;
-      height: 20px;
+    .btn {
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
       cursor: pointer;
-      opacity: 0.7;
     }
-    .task-actions img:hover {
-      opacity: 1;
-    }
-    .add-task-btn {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      background-color: #026aa7;
+    .btn-add {
+      background: #026aa7;
       color: white;
       font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
     }
-    .hidden {
-      display: none;
+    .edit-zone {
+      margin-top: 10px;
+    }
+    .edit-zone input, .edit-zone select {
+      padding: 6px;
+      margin-right: 10px;
+    }
+    .edit-zone button {
+      padding: 6px 12px;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
-
 <body>
 
-  <ul id="task-list" class="task-list"></ul>
-  <button id="add-task" class="add-task-btn">+ Add New Task</button>
+<h3>Task Checklist</h3>
 
-  <script>
-    const t = TrelloPowerUp.iframe();
+<div class="edit-zone" id="edit-zone">
+  <input type="text" id="task-input" placeholder="Add an item" />
+  <select id="member-select">
+    <option value="">Assign Member</option>
+  </select>
+  <input type="date" id="due-input" />
+  <button id="add-task-btn">Add</button>
+</div>
+
+<ul id="task-list" class="task-list"></ul>
+
+<script>
+  const t = TrelloPowerUp.iframe();
+  let members = [];
+
+  async function loadMembers() {
+    const context = await t.getContext();
+    const boardId = context.board;
+    const token = await t.get('member', 'private', 'trello_token');
+    const apiKey = "7443867af11d32c3e8f8152b114201fd";
+
+    const res = await fetch(`https://api.trello.com/1/boards/${boardId}/members?key=${apiKey}&token=${token}`);
+    members = await res.json();
+
+    const select = document.getElementById('member-select');
+    members.forEach(member => {
+      const opt = document.createElement('option');
+      opt.value = member.id;
+      opt.textContent = member.fullName;
+      select.appendChild(opt);
+    });
+  }
+
+  function addTask(name, memberId, dueDate) {
     const taskList = document.getElementById('task-list');
-    const addTaskBtn = document.getElementById('add-task');
 
-    addTaskBtn.addEventListener('click', () => {
-      const li = document.createElement('li');
-      li.className = 'task-item';
+    const li = document.createElement('li');
+    li.className = 'task-item';
 
-      const input = document.createElement('input');
-      input.className = 'task-name';
-      input.type = 'text';
-      input.placeholder = 'Task name...';
+    const member = members.find(m => m.id === memberId);
+    const memberName = member ? member.fullName : 'No member';
+    const memberInitial = member ? member.initials : '';
 
-      const actions = document.createElement('div');
-      actions.className = 'task-actions';
-      actions.innerHTML = `
-        <img src="https://cdn-icons-png.flaticon.com/512/61/61112.png" title="Set Due Date" class="due-date-btn">
-        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" title="Assign Member" class="assign-btn">
-        <img src="https://cdn-icons-png.flaticon.com/512/512/512142.png" title="More" class="more-btn">
-      `;
+    li.innerHTML = `
+      <div class="task-name">${name}</div>
+      <div class="task-meta">
+        <div class="meta-due"><i>⏰</i> ${dueDate}</div>
+        <div class="meta-member"><i>👤</i> ${memberName}</div>
+      </div>
+    `;
 
-      li.appendChild(input);
-      li.appendChild(actions);
-      taskList.appendChild(li);
+    taskList.appendChild(li);
+  }
 
-      input.focus();
+  document.getElementById('add-task-btn').addEventListener('click', () => {
+    const name = document.getElementById('task-input').value.trim();
+    const memberId = document.getElementById('member-select').value;
+    const dueDate = document.getElementById('due-input').value;
 
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && input.value.trim() !== '') {
-          input.disabled = true;
-        }
-      });
+    if (!name) {
+      alert('Task name required.');
+      return;
+    }
 
-      actions.querySelector('.due-date-btn').addEventListener('click', () => {
-        alert('Pick a calendar date (calendar picker will be implemented)');
-      });
+    addTask(name, memberId, dueDate || new Date().toISOString().substring(0,10));
 
-      actions.querySelector('.assign-btn').addEventListener('click', () => {
-        alert('Pick a member from the board (list will be implemented)');
-      });
+    // Clear input fields
+    document.getElementById('task-input').value = '';
+    document.getElementById('member-select').value = '';
+    document.getElementById('due-input').value = '';
+  });
 
-      actions.querySelector('.more-btn').addEventListener('click', () => {
-        const choice = prompt('Create Task Card or Delete Task? (type create or delete)');
-        if (choice === 'delete') li.remove();
-        else if (choice === 'create') alert('Task card would be created here (API call next)');
-      });
-    });
-
-    t.render(function(){
-      return t.sizeTo('#task-list');
-    });
-  </script>
+  t.render(() => {
+    loadMembers();
+  });
+</script>
 
 </body>
 </html>
