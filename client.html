@@ -78,36 +78,40 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-  setDateBtn.addEventListener('click', (e) => {
-    console.log('📆 Set Date button clicked');
-    t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      target: e.target
-    }).then(selected => {
-      console.log('📅 Selected date:', selected);
-      if (selected) {
-        setDateBtn.innerHTML = `🕑 ${selected}`;
-      }
-    }).catch(err => console.error('❌ Error in date popup:', err));
+setDateBtn.addEventListener('click', function(event) {
+  console.log('📆 Set Date button clicked');
+  t.popup({
+    title: 'Select Due Date',
+    url: 'date-picker.html',
+    height: 130,
+    target: event.target // ✅ MUST be provided
+  }).then(selected => {
+    if (selected) {
+      console.log('📆 Date selected:', selected);
+      setDateBtn.innerHTML = `🕑 ${selected}`;
+    }
+  }).catch(err => {
+    console.error('❌ Error in date popup:', err);
   });
+});
 
-  assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Assign Member button clicked');
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members },
-      target: e.target
-    }).then(selected => {
-      console.log('🙋‍♂️ Selected member:', selected);
-      if (selected && selected.avatar) {
-        assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-      }
-    }).catch(err => console.error('❌ Error in member popup:', err));
+assignBtn.addEventListener('click', function(event) {
+  console.log('👤 Assign Member button clicked');
+  t.popup({
+    title: 'Assign Member',
+    url: 'member-picker.html',
+    height: 300,
+    args: { members },
+    target: event.target // ✅ MUST be provided
+  }).then(selected => {
+    if (selected && selected.avatar) {
+      console.log('👤 Member selected:', selected.name);
+      assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+    }
+  }).catch(err => {
+    console.error('❌ Error in member popup:', err);
   });
+});
 
   threeDots.addEventListener('click', (e) => {
     console.log('⚙️ Three dots clicked (action menu)');
