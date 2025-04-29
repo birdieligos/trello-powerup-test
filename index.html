@@ -7,15 +7,15 @@ TrelloPowerUp.initialize({
   'show-authorization': t =>
     t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-  'card-back-section': {
-    title: 'Task Checklist',
-    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-    content: {
-      type: 'iframe',
-      url: t => t.signUrl('./client.html'),
-      height: 500
-    }
-  },
+'card-back-section': (t) => ({
+  title: 'Task Checklist',
+  icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+  content: {
+    type: 'iframe',
+    url: t.signUrl('./client.html'),
+    height: 500
+  }
+}),
 
   'popup': t => [],
   'card-buttons': t => [],
