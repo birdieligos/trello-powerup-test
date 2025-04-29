@@ -9,25 +9,27 @@
       font-family: sans-serif;
       padding: 10px;
     }
-    .task-checklist {
-      margin-top: 10px;
-    }
-    .task-header {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
     .task-list {
       list-style: none;
       padding: 0;
+      margin-top: 10px;
     }
     .task-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #f4f5f7;
-      margin-bottom: 5px;
+      margin-bottom: 6px;
       padding: 8px;
       border-radius: 4px;
+    }
+    .task-input {
+      font-size: 14px;
+      padding: 5px;
+      width: 200px;
+      border: none;
+      background: transparent;
+      border-bottom: 1px solid #ccc;
     }
     .task-meta {
       font-size: 12px;
@@ -60,35 +62,27 @@
       background: #eee;
     }
     .add-task-btn {
-      margin-top: 15px;
-      padding: 10px;
-      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
       background-color: #026aa7;
       color: white;
       border: none;
       border-radius: 4px;
       font-weight: bold;
       cursor: pointer;
+      width: 100%;
     }
   </style>
 </head>
 <body>
-  <div class="task-checklist">
-    <div class="task-header">Task Checklist</div>
-    <ul id="task-list" class="task-list"></ul>
-    <button id="add-task" class="add-task-btn">+ Add New Task</button>
-  </div>
+
+  <ul id="task-list" class="task-list"></ul>
+  <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
   <script>
     const t = TrelloPowerUp.iframe();
 
     document.getElementById('add-task').addEventListener('click', () => {
-      const taskName = prompt('Enter Task Name:');
-      const dueDate = prompt('Enter Due Date (YYYY-MM-DD):');
-      const member = prompt('Enter Member Initials or Name:');
-
-      if (!taskName) return;
-
       const taskList = document.getElementById('task-list');
 
       const li = document.createElement('li');
@@ -96,8 +90,8 @@
 
       li.innerHTML = `
         <div>
-          <div>${taskName}</div>
-          <div class="task-meta">Due: ${dueDate || 'None'} | Member: ${member || 'None'}</div>
+          <input type="text" placeholder="Task name..." class="task-input">
+          <div class="task-meta">Due: (click to set) | Member: (click to set)</div>
         </div>
         <div class="task-actions">
           <div class="three-dots">&#x22EE;</div>
@@ -120,11 +114,12 @@
       });
 
       li.querySelector('.create-task-card').addEventListener('click', async () => {
-        if (!dueDate || !member) {
-          alert('Member and Due Date must be assigned to create a task card.');
+        const taskName = li.querySelector('.task-input').value.trim();
+        if (!taskName) {
+          alert('Task name is required before creating.');
           return;
         }
-        alert('✅ Task card would be created here (API call coming soon)');
+        alert('✅ Task card would be created here (API call next)');
         actionMenu.style.display = 'none';
       });
 
@@ -142,8 +137,9 @@
     });
 
     t.render(function(){
-      // when Trello asks iframe to re-render
+      // re-render when Trello asks
     });
   </script>
+
 </body>
 </html>
