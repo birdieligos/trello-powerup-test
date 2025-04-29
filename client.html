@@ -5,12 +5,9 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 10px;
-    }
     .task-checklist {
       margin-top: 10px;
+      padding: 10px;
     }
     .task-item {
       display: flex;
@@ -19,20 +16,19 @@
       padding: 8px;
       border-bottom: 1px solid #ddd;
     }
+    .task-left {
+      display: flex;
+      flex-direction: column;
+    }
     .task-name {
       font-weight: bold;
     }
     .task-meta {
-      display: flex;
-      gap: 10px;
-      align-items: center;
       font-size: 12px;
       color: #555;
-      margin-top: 4px;
     }
     .task-actions {
       cursor: pointer;
-      padding: 5px;
       font-size: 20px;
     }
     .add-task-btn {
@@ -48,6 +44,7 @@
 </head>
 <body>
   <div class="task-checklist">
+    <h3>Task Checklist</h3>
     <div id="task-list"></div>
     <button id="add-task" class="add-task-btn">+ Add New Task</button>
   </div>
@@ -55,45 +52,66 @@
   <script>
     const t = TrelloPowerUp.iframe();
 
-    function createTaskItem(taskName, dueDate, member) {
-      const taskDiv = document.createElement('div');
-      taskDiv.className = 'task-item';
-      taskDiv.innerHTML = `
-        <div>
-          <div class="task-name">${taskName}</div>
-          <div class="task-meta">
-            <span>Due: ${dueDate || 'Not set'}</span>
-            <span>Member: ${member || 'Not set'}</span>
-          </div>
-        </div>
-        <div class="task-actions">&#x22EE;</div>
-      `;
+    // Core rendering function
+    function renderChecklist() {
+      const taskList = document.getElementById('task-list');
+      taskList.innerHTML = '';
 
-      taskDiv.querySelector('.task-actions').addEventListener('click', () => {
-        const action = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
-        if (action === 'create') {
-          if (!dueDate || !member) {
-            alert('Task must have Date and Member assigned to create card.');
-          } else {
-            alert('Creating Task Card... (your API logic here)');
-            // Hook up Trello API card creation here
-          }
-        } else if (action === 'delete') {
-          taskDiv.remove();
-        }
-      });
+      t.get('card', 'shared', 'taskItems')
+        .then(function(items = []) {
+          items.forEach((item, idx) => {
+            const taskDiv = document.createElement('div');
+            taskDiv.className = 'task-item';
 
-      return taskDiv;
+            taskDiv.innerHTML = `
+              <div class="task-left">
+                <div class="task-name">${item.name}</div>
+                <div class="task-meta">
+                  Due: ${item.due || 'None'} | Member: ${item.member || 'None'}
+                </div>
+              </div>
+              <div class="task-actions" data-idx="${idx}">&#x22EE;</div>
+            `;
+
+            taskDiv.querySelector('.task-actions').addEventListener('click', function() {
+              const action = prompt('Type "create" to Create Task Card or "delete" to Delete Task');
+              if (action === 'create') {
+                if (!item.due || !item.member) {
+                  alert('Member and Date must be assigned to create a Task Card.');
+                } else {
+                  alert('Creating Task Card... (Hook your API logic here)');
+                  // INSERT Trello API to create task card here
+                }
+              } else if (action === 'delete') {
+                items.splice(idx, 1);
+                t.set('card', 'shared', 'taskItems', items)
+                  .then(renderChecklist);
+              }
+            });
+
+            taskList.appendChild(taskDiv);
+          });
+        });
     }
 
-    document.getElementById('add-task').addEventListener('click', () => {
-      const taskName = prompt('Enter Task Name');
-      if (!taskName) return;
-      const dueDate = prompt('Enter Due Date (YYYY-MM-DD)');
-      const member = prompt('Enter Member Name or ID');
+    // Add new task button
+    document.getElementById('add-task').addEventListener('click', function() {
+      const name = prompt('Enter Task Name:');
+      if (!name) return;
+      const due = prompt('Enter Due Date (YYYY-MM-DD):');
+      const member = prompt('Enter Member:');
 
-      const taskList = document.getElementById('task-list');
-      taskList.appendChild(createTaskItem(taskName, dueDate, member));
+      t.get('card', 'shared', 'taskItems')
+        .then(function(items = []) {
+          items.push({ name, due, member });
+          return t.set('card', 'shared', 'taskItems', items);
+        })
+        .then(renderChecklist);
+    });
+
+    // Tell Trello to re-call this when data changes
+    t.render(function() {
+      renderChecklist();
     });
   </script>
 </body>
