@@ -60,21 +60,6 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
 
-async function fetchMembers() {
-  try {
-    const board = await t.board('id');
-    const token = await t.get('member', 'private', 'trello_token');
-    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-    members = await res.json();
-  } catch (err) {
-    console.error('❌ Failed to fetch members:', err);
-  }
-}
-
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
-
 function createTaskInputRow() {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
@@ -158,6 +143,21 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
+function saveChecklist() {
+  t.set('card', 'shared', { taskChecklist: checklistData });
+}
+
+async function fetchMembers() {
+  try {
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'trello_token');
+    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+    members = await res.json();
+  } catch (err) {
+    console.error('❌ Failed to fetch members:', err);
+  }
+}
+
 async function loadChecklist() {
   try {
     const saved = await t.get('card', 'shared', 'taskChecklist');
@@ -172,9 +172,11 @@ async function loadChecklist() {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-t.render(async () => {
-  await fetchMembers();
-  await loadChecklist();
+// ✅ Renders iframe UI fast, loads data async
+t.render(() => {
+  createTaskInputRow(); // Always show input UI
+  fetchMembers();       // Async
+  loadChecklist();      // Async
 });
 </script>
 </body>
