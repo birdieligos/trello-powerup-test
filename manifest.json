@@ -12,8 +12,7 @@
     "authorization-status",
     "show-authorization",
     "card-buttons",
-    "card-badges",           ← required to stub front‑of‑card badges  
-    "card-detail-badges",    ← your “Create Task Card” under each item  
+    "card-badges",           ← required to stub front‑of‑card badges     
     "card-back-section"      ← required to stub the back‑of‑card section  
   ],
   "icon": {
