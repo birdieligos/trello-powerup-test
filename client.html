@@ -161,10 +161,9 @@ document.getElementById('add-task').addEventListener('click', () => {
   saveChecklist();
 });
 
-t.render(async function() {
+t.render(() => {
   console.log('🔄 t.render called');
-  await fetchMembers();
-  await loadChecklist();
+  fetchMembers().then(() => loadChecklist());
 });
 </script>
 
