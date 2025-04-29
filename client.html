@@ -68,22 +68,12 @@ function createTaskItem() {
   const assignBtn = li.querySelector('.assign-member');
   const threeDots = li.querySelector('.three-dots');
 
-  setDateBtn.addEventListener('click', (e) => {
-    const t = TrelloPowerUp.iframe();
-    console.log('📆 Set Date button clicked');
-    t.popup({
-      title: 'Select Due Date',
-      url: 'date-picker.html',
-      height: 130,
-      mouseEvent: e
-    }).then(selected => {
-      if (selected) {
-        setDateBtn.innerHTML = `🕑 ${selected}`;
-      }
-    }).catch(err => {
-      console.error('❌ Error in date popup:', err);
-    });
-  });
+t.popup({
+  title: 'Select Due Date',
+  url: 'date-picker.html',
+  height: 130,
+  mouseEvent: e // ✅ correct when inside iframe
+});
 
   assignBtn.addEventListener('click', (e) => {
     const t = TrelloPowerUp.iframe();
