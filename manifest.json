@@ -1,6 +1,6 @@
 // manifest.json (v1.7.5)
 {
-  "name": "Task Card & Mirroring Power‑Up",
+  "name": "Task Checklist",
   "version": "1.7.5",
   "description": "Creates a Task Checklist and lets you convert its items into cards.",
   "connectors": {
