@@ -150,26 +150,31 @@ async function loadChecklist() {
       checklistData = saved;
       saved.forEach(task => createTaskItem(task));
     } else {
-      checklistData = []; // force init to empty
+      // show one blank task item by default, no saving
+      const task = { name: '', dueDate: '', memberAvatar: '' };
+      checklistData.push(task);
+      createTaskItem(task);
     }
   } catch (err) {
     console.error('❌ Error loading checklist:', err);
-    checklistData = [];
+    // fallback
+    const task = { name: '', dueDate: '', memberAvatar: '' };
+    checklistData.push(task);
+    createTaskItem(task);
   }
 }
-
-document.getElementById('add-task').addEventListener('click', () => {
-  const task = { name: '', dueDate: '', memberAvatar: '' };
-  checklistData.push(task);
-  createTaskItem(task);
-  saveChecklist();
-});
 
 t.render(async () => {
   await fetchMembers();
   await loadChecklist();
+
+  document.getElementById('add-task').addEventListener('click', () => {
+    const task = { name: '', dueDate: '', memberAvatar: '' };
+    checklistData.push(task);
+    createTaskItem(task);
+    saveChecklist();
+  });
 });
 </script>
-
 </body>
 </html>
