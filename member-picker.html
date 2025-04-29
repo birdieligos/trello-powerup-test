@@ -4,49 +4,57 @@
   <meta charset="utf-8" />
   <title>Select Member</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+    }
+    .member {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .member img {
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      object-fit: cover;
+    }
+  </style>
 </head>
-<body style="font-family:sans-serif;padding:10px">
+<body>
   <ul id="member-list" style="list-style:none;padding:0;margin:0"></ul>
 
   <script>
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
+    const { members = [] } = t.arg('args') || {};
 
-    async function loadMembers() {
-      try {
-        const board = await t.board('id');
-        const token = await t.get('member', 'private', 'trello_token');
-        const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-        const members = await res.json();
-        console.log(`[Member Picker] Loaded ${members.length} members`);
+    console.log('[Member Picker] Loaded with members:', members.length);
 
-        members.forEach(m => {
-          const li = document.createElement('li');
-          li.style.marginBottom = '10px';
-          li.style.cursor = 'pointer';
-          li.style.display = 'flex';
-          li.style.alignItems = 'center';
-          li.innerHTML = `
-            <img src="${m.avatarUrl ? m.avatarUrl + '/30.png' : ''}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">
-            ${m.fullName}
-          `;
-          li.addEventListener('click', () => {
-            t.closePopup({
-              id: m.id,
-              avatar: m.avatarUrl ? m.avatarUrl + '/30.png' : '',
-              name: m.fullName
-            });
-          });
-          list.appendChild(li);
+    members.forEach(m => {
+      const li = document.createElement('li');
+      li.className = 'member';
+
+      const avatarUrl = m.uploadedAvatarUrl || '';
+
+      li.innerHTML = `
+        <img src="${avatarUrl ? avatarUrl + '/30.png' : ''}" alt="${m.fullName}">
+        ${m.fullName}
+      `;
+
+      li.addEventListener('click', () => {
+        t.closePopup({
+          id: m.id,
+          avatar: avatarUrl ? avatarUrl + '/30.png' : '',
+          name: m.fullName
         });
+      });
 
-      } catch (err) {
-        list.innerHTML = `<li style="color:red">⚠️ Failed to load members</li>`;
-        console.error('[Member Picker] Error loading members:', err);
-      }
-    }
-
-    loadMembers();
+      list.appendChild(li);
+    });
   </script>
 </body>
 </html>
