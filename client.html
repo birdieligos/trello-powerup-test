@@ -5,70 +5,77 @@
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 10px; }
-    .task-list { list-style: none; padding: 0; margin-top: 10px; }
+    body {
+      font-family: sans-serif;
+      padding: 10px;
+    }
+    .task-list {
+      list-style: none;
+      padding: 0;
+    }
     .task-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       background: #f4f5f7;
-      padding: 10px;
-      margin-bottom: 8px;
+      padding: 8px;
       border-radius: 6px;
+      margin-bottom: 6px;
+      gap: 8px;
     }
-    .task-left { display: flex; align-items: center; gap: 10px; }
     .task-name {
-      font-size: 14px;
+      flex: 1;
       font-weight: bold;
-      border: none;
-      background: transparent;
-      outline: none;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 6px;
     }
-    .task-controls { display: flex; align-items: center; gap: 8px; }
-    .date-btn, .member-btn, .menu-btn {
+    .set-date, .assign-member, .three-dots {
+      background: #e2e4e6;
+      border: none;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
       display: flex;
       align-items: center;
-      background: #dde1e5;
-      border: none;
-      border-radius: 4px;
+      gap: 4px;
+    }
+    .three-dots {
+      font-size: 18px;
       padding: 5px 8px;
+    }
+    .action-menu {
+      display: none;
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      z-index: 10;
+    }
+    .action-menu div {
+      padding: 8px 12px;
       cursor: pointer;
-      font-size: 12px;
+    }
+    .action-menu div:hover {
+      background: #eee;
     }
     .add-task-btn {
       margin-top: 10px;
       padding: 10px;
-      background-color: #026aa7;
+      background: #026aa7;
       color: white;
+      font-weight: bold;
       border: none;
       border-radius: 6px;
       width: 100%;
-      font-weight: bold;
       cursor: pointer;
     }
     .member-avatar {
       width: 20px;
       height: 20px;
       border-radius: 50%;
-    }
-    .member-menu {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 6px;
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-    }
-    .member-option {
-      display: flex;
-      align-items: center;
-      padding: 4px 6px;
-      cursor: pointer;
-    }
-    .member-option:hover {
-      background: #eee;
+      object-fit: cover;
     }
   </style>
 </head>
@@ -95,59 +102,72 @@ function createTaskItem() {
   li.className = 'task-item';
 
   li.innerHTML = `
-    <div class="task-left">
-      <input type="text" placeholder="Task name..." class="task-name">
-      <button class="date-btn">📅 Set Date</button>
-      <button class="member-btn">👤 Assign</button>
-    </div>
-    <button class="menu-btn">⋯</button>
+    <input type="text" class="task-name" placeholder="Task name..." />
+    <button class="set-date"><span>🕑</span>Set Date</button>
+    <button class="assign-member"><span>👤</span>Assign</button>
+    <button class="three-dots">&#x22EE;</button>
   `;
 
-  const dateBtn = li.querySelector('.date-btn');
-  const memberBtn = li.querySelector('.member-btn');
+  const setDateBtn = li.querySelector('.set-date');
+  const assignBtn = li.querySelector('.assign-member');
+  const threeDots = li.querySelector('.three-dots');
 
-  // Date button logic
-  dateBtn.addEventListener('click', () => {
+  setDateBtn.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'date';
     input.style.position = 'absolute';
     input.style.opacity = 0;
     document.body.appendChild(input);
-    input.click();
+    input.focus();
     input.addEventListener('change', () => {
-      const date = new Date(input.value);
-      const options = { month: 'short', day: 'numeric' };
-      dateBtn.innerHTML = `📅 ${date.toLocaleDateString('en-US', options)}`;
+      if (input.value) {
+        const date = new Date(input.value);
+        const options = { month: 'short', day: 'numeric' };
+        setDateBtn.innerHTML = `🕑 ${date.toLocaleDateString('en-US', options)}`;
+      }
       input.remove();
     });
   });
 
-  // Member button logic
-  memberBtn.addEventListener('click', () => {
-    let menu = document.createElement('div');
-    menu.className = 'member-menu';
+  assignBtn.addEventListener('click', () => {
+    const menu = document.createElement('div');
+    menu.className = 'action-menu';
     members.forEach(member => {
       const option = document.createElement('div');
-      option.className = 'member-option';
       option.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar"> ${member.fullName}`;
       option.addEventListener('click', () => {
-        memberBtn.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar">`;
+        assignBtn.innerHTML = `<img src="${member.avatarUrl ? member.avatarUrl + '/30.png' : ''}" class="member-avatar">`;
         menu.remove();
       });
       menu.appendChild(option);
     });
     document.body.appendChild(menu);
-    const rect = memberBtn.getBoundingClientRect();
+    const rect = assignBtn.getBoundingClientRect();
     menu.style.top = rect.bottom + 'px';
     menu.style.left = rect.left + 'px';
-    menu.style.display = 'flex';
+  });
 
-    document.addEventListener('click', function handler(e) {
-      if (!menu.contains(e.target) && e.target !== memberBtn) {
-        menu.remove();
-        document.removeEventListener('click', handler);
-      }
+  threeDots.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const menu = document.createElement('div');
+    menu.className = 'action-menu';
+    const createOption = document.createElement('div');
+    createOption.textContent = 'Create Task Card';
+    createOption.addEventListener('click', () => {
+      alert('Task card creation logic goes here');
+      menu.remove();
     });
+    const deleteOption = document.createElement('div');
+    deleteOption.textContent = 'Delete Task';
+    deleteOption.addEventListener('click', () => {
+      li.remove();
+    });
+    menu.appendChild(createOption);
+    menu.appendChild(deleteOption);
+    document.body.appendChild(menu);
+    const rect = threeDots.getBoundingClientRect();
+    menu.style.top = rect.bottom + 'px';
+    menu.style.left = rect.left + 'px';
   });
 
   taskList.appendChild(li);
