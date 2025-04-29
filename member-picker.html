@@ -16,9 +16,7 @@
     console.log('[Member Picker] Loaded with members:', members.length);
 
     members.forEach(m => {
-      const avatar = m.avatarHash
-        ? `https://trello-members.s3.amazonaws.com/${m.id}/${m.avatarHash}/30.png`
-        : '';
+      const avatar = m.avatarUrl ? `${m.avatarUrl}/30.png` : '';
 
       const li = document.createElement('li');
       li.style.marginBottom = '10px';
@@ -27,7 +25,7 @@
       li.style.alignItems = 'center';
 
       li.innerHTML = `
-        <img src="${avatar}" style="border-radius:50%;width:24px;height:24px;margin-right:8px">
+        <img src="${avatar}" style="border-radius:50%;width:24px;height:24px;margin-right:8px" onerror="this.style.display='none'">
         ${m.fullName}
       `;
 
