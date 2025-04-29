@@ -52,34 +52,6 @@
       background-color: #026aa7;
       color: white;
       font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      width: 100%;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .action-menu {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-      z-index: 10;
-    }
-    .action-menu div {
-      padding: 10px 15px;
-      cursor: pointer;
-    }
-    .action-menu div:hover {
-      background: #eee;
-    }
-  </style>
-</head>
-<body>
-
-<ul id="task-list" class="task-list"></ul>
-<button id="add-task" class="add-task-btn">+ Add New Task</button>
-
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
@@ -95,7 +67,6 @@ function createTaskItem() {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
-
   li.innerHTML = `
     <input type="text" placeholder="Task name..." class="task-name" />
     <button class="date-btn"><span>🕑</span> Set Date</button>
@@ -167,11 +138,10 @@ function createTaskItem() {
   taskList.appendChild(li);
 }
 
-document.getElementById('add-task').addEventListener('click', createTaskItem);
-document.addEventListener('DOMContentLoaded', fetchMembers);
+document.addEventListener('DOMContentLoaded', () => {
+  fetchMembers();
+  document.getElementById('add-task').addEventListener('click', createTaskItem);
+});
 
 t.render(() => {});
 </script>
-
-</body>
-</html>
