@@ -160,13 +160,12 @@ document.getElementById('add-task').addEventListener('click', () => {
   saveChecklist();
 });
 
-t.render(async function() {
+t.render(() => {
   console.log('🔄 t.render called');
-  await fetchMembers();
-  await loadChecklist();
-  await t.sizeTo('#task-list');
+  fetchMembers()
+    .then(loadChecklist)
+    .catch(err => console.error('❌ Failed during fetchMembers/loadChecklist', err));
 });
-</script>
 
 </body>
 </html>
