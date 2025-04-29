@@ -163,7 +163,8 @@ document.getElementById('add-task').addEventListener('click', () => {
   saveChecklist();
 });
 
-document.addEventListener('DOMContentLoaded', async () => {
+t.render(async function() {
+  console.log('🔄 t.render called');
   await fetchMembers();
   await loadChecklist();
 });
