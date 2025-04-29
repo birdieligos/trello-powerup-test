@@ -24,13 +24,14 @@ TrelloPowerUp.initialize({
     content: {
       type: 'iframe',
       url: t.signUrl('./client.html'),
-      height: 500 // Allow scroll room for task items
+      height: 500 // ⬅️ bumped a little for checklist scrolling comfort
     }
   }),
 
+  // Required popup capability
   'popup': t => [],
 
-  // Required stubs
+  // Stubs (we don't use these yet but Trello requires them)
   'card-buttons': t => [],
   'card-badges': t => [],
   'attachment-sections': t => [],
