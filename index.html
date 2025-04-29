@@ -7,32 +7,34 @@
 </head>
 <body>
 <script>
-  const API_KEY = '7443867af11d32c3e8f8152b114201fd';
+const API_KEY = '7443867af11d32c3e8f8152b114201fd';
 
-  TrelloPowerUp.initialize({
+TrelloPowerUp.initialize({
 
-    'authorization-status': t =>
-      t.get('member', 'private', 'trello_token')
-       .then(token => ({ authorized: !!token })),
+  'authorization-status': t =>
+    t.get('member','private','trello_token')
+      .then(token => ({ authorized: !!token })),
 
-    'show-authorization': t =>
-      t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
+  'show-authorization': t =>
+    t.popup({ title: 'Authorize', url: './authorize.html', height: 150 }),
 
-    'card-back-section': function(t, options) {
-      return {
-        title: 'Task Checklist',
-        icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
-        content: {
-          type: 'iframe',
-          url: t.signUrl('./client.html?cb=2'),  // 🚨 cache-busting number updated
-          height: 400
-        }
-      };
-    },
+  'card-back-section': t => ({
+    title: 'Task Checklist',
+    icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
+    content: {
+      type: 'iframe',
+      url: t.signUrl('./client.html'),
+      height: 600
+    }
+  }),
 
-    'card-buttons': t => [],  // no card button anymore
-    'card-badges':  t => []   // no badges needed
-  });
+  // Required empty handlers
+  'card-buttons': t => [],
+  'card-badges':  t => [],
+  'card-detail-badges': t => [],
+  'attachment-sections': t => [],   <!-- add this to silence warning -->
+  'board-buttons': t => [],          <!-- optional for future -->
+});
 </script>
 </body>
 </html>
