@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
@@ -74,10 +74,14 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 
 async function fetchMembers() {
-  const board = await t.board('id');
-  const token = await t.get('member', 'private', 'trello_token');
-  const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
-  members = await res.json();
+  try {
+    const board = await t.board('id');
+    const token = await t.get('member', 'private', 'trello_token');
+    const res = await fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+    members = await res.json();
+  } catch (e) {
+    console.error('Error fetching members', e);
+  }
 }
 
 function createTaskItem() {
@@ -101,7 +105,7 @@ function createTaskItem() {
       title: 'Select Due Date',
       url: 'date-picker.html',
       height: 130,
-      target: e.target,  // FIXED
+      target: e.target
     }).then(selected => {
       if (selected) {
         setDateBtn.innerHTML = `🕑 ${selected}`;
@@ -115,7 +119,7 @@ function createTaskItem() {
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      target: e.target,  // FIXED
+      target: e.target
     }).then(selected => {
       if (selected && selected.avatar) {
         assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
