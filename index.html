@@ -28,22 +28,14 @@ TrelloPowerUp.initialize({
     }
   }),
 
-  // We are not using them yet but MUST stub them
+  // Required for working popups
+  'popup': t => [],
+
+  // Stub unused features to prevent warnings
   'card-buttons': t => [],
   'card-badges': t => [],
   'attachment-sections': t => [],
-  'card-detail-badges': t => [],
-
-  'popup': t => {
-    return []; // popup stubs (handled automatically by t.popup inside client)
-  },
-
-  'on-enable': t => {
-    console.log('✅ Power-Up enabled');
-  },
-  'on-disable': t => {
-    console.log('🚫 Power-Up disabled');
-  }
+  'card-detail-badges': t => []
 
 });
 </script>
