@@ -75,13 +75,10 @@ function loadCachedMembers() {
 }
 
 function appendChecklistItem(task) {
-  if (isSaving) {
-    console.warn('⛔ Prevented duplicate save');
-    return;
-  }
+  if (isSaving) return;
   isSaving = true;
 
-  t.get('card', 'shared', 'taskChecklist').then(existing => {
+  // Append task directly without reloading saved list
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
 
@@ -189,7 +186,7 @@ function createTaskInputRow() {
   document.getElementById('add-task').disabled = true;
 }
 
-function createTaskItem(task) {
+function renderChecklistItem(task) {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -214,7 +211,7 @@ t.render(() => {
       if (Array.isArray(saved)) {
       console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
         checklistData = saved;
-        saved.forEach(createTaskItem);
+        saved.forEach(renderChecklistItem);
       }
     });
 
