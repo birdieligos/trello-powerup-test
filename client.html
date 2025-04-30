@@ -60,10 +60,6 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
 
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
-
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
     .then(cached => {
@@ -101,20 +97,12 @@ function createTaskInputRow() {
 
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
-  nameInput.addEventListener('input', () => {
-    task.name = nameInput.value;
-    console.log('✏️ Task name updated:', task.name);
-    saveChecklist();
-  });
-
   dateBtn.addEventListener('click', (e) => {
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-          console.log('📅 Task date updated:', task.dueDate);
-          saveChecklist();
         }
       });
   });
@@ -125,8 +113,6 @@ function createTaskInputRow() {
         if (selected?.avatar) {
           task.memberAvatar = selected.avatar;
           assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
-          console.log('🙋 Assigned member updated:', selected.avatar);
-          saveChecklist();
         }
       });
   });
@@ -134,11 +120,12 @@ function createTaskInputRow() {
   const addBtn = document.createElement('button');
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
-  addBtn.addEventListener('click', () => {
+  addBtn.addEventListener('click', async () => {
+    task.name = nameInput.value;
     checklistData.push(task);
+    await t.set('card', 'shared', { taskChecklist: checklistData });
     li.remove();
     createTaskItem(task);
-    saveChecklist();
   });
 
   const cancelBtn = document.createElement('button');
@@ -173,14 +160,14 @@ function createTaskItem(task) {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
+let initialized = false;
+
 t.render(() => {
-  loadCachedMembers();
-  t.get('card', 'shared', 'taskChecklist').then(data => {
-    if (Array.isArray(data)) {
-      checklistData = data;
-      data.forEach(createTaskItem);
-    }
-  });
+  if (!initialized) {
+    loadCachedMembers();
+    createTaskInputRow();
+    initialized = true;
+  }
 });
 </script>
 </body>
