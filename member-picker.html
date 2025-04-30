@@ -10,10 +10,11 @@
     li.member-item {
       margin-bottom: 10px;
       cursor: pointer;
-      padding: 6px;
-      border-radius: 4px;
       display: flex;
       align-items: center;
+      padding: 6px;
+      border-radius: 4px;
+      background-color: #f4f5f7;
     }
     li.member-item.selected {
       background-color: #e4f0f6;
@@ -21,33 +22,33 @@
     }
     .checkmark {
       margin-left: auto;
-      font-weight: bold;
       color: black;
+      font-weight: bold;
       display: none;
     }
-    #save-member {
-      margin-top: 12px;
-      padding: 8px 12px;
+    .save-btn {
+      margin-top: 20px;
+      padding: 10px 14px;
       background-color: #0079bf;
       color: white;
       border: none;
       border-radius: 4px;
-      cursor: pointer;
       font-weight: bold;
+      cursor: pointer;
       width: 100%;
     }
   </style>
 </head>
 <body>
   <ul id="member-list"></ul>
-  <button id="save-member">Save</button>
+  <button class="save-btn" id="save-btn">Save</button>
 
   <script>
     const t = TrelloPowerUp.iframe();
-    const taskId = t.arg('taskId');
     const members = t.arg('members') || [];
+    const taskId = t.arg('taskId');
     const list = document.getElementById('member-list');
-    const saveBtn = document.getElementById('save-member');
+    const saveBtn = document.getElementById('save-btn');
 
     let selectedMember = null;
 
