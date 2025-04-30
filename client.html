@@ -147,25 +147,32 @@ function updateChecklistField(taskId, field, value) {
 const assignBtn = document.createElement('button');
 assignBtn.className = 'assign-member';
 assignBtn.innerHTML = '<span>👤</span> Assign';
+
 assignBtn.addEventListener('click', (e) => {
   console.log('👤 Member picker opened');
-  t.popup({
-    type: 'popup',
-    title: 'Assign Member',
-    url: 'member-picker.html',
-    height: 300,
-    mouseEvent: e,
-    args: { members, taskId },
-    callback: function (t, opts) {
-      if (opts?.name) {
-        console.log(`[Member Picker] Selected: ${opts.name}`);
-        assignBtn.innerHTML = `👤 ${opts.name}`;
-        task.memberAvatar = opts.name;
-        updateChecklistField(taskId, 'memberAvatar', opts.name);
-      } else {
-        console.log('🙅 No member selected');
+
+  // Safely fetch members (if needed), then return popup
+  return t.get('board', 'shared', 'cachedMembers').then((members) => {
+    return t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      mouseEvent: e,
+      args: { members, taskId },
+      callback: function (t, opts) {
+        if (opts?.name) {
+          console.log(`[Member Picker] Selected: ${opts.name}`);
+          assignBtn.innerHTML = `👤 ${opts.name}`;
+          task.memberAvatar = opts.name;
+
+          // Log current checklist state before update
+          console.log(`📥 Member assigned, about to update taskChecklist for taskId="${taskId}"`);
+          updateChecklistField(taskId, 'memberAvatar', opts.name);
+        } else {
+          console.log('🙅 No member selected');
+        }
       }
-    }
+    });
   });
 });
 
