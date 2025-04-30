@@ -63,16 +63,29 @@
       });
     }
 
-    function updateChecklistField(taskId, field, value) {
-      t.get('card', 'shared', 'taskChecklist').then(existing => {
-        const updated = Array.isArray(existing)
-          ? existing.map(item => item.taskId === taskId ? { ...item, [field]: value } : item)
-          : [];
-        t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-          console.log(`✅ Task ${field} updated to Trello storage for taskId=${taskId}`);
-        });
+function updateChecklistField(taskId, field, value) {
+  t.get('card', 'shared', 'taskChecklist').then(existing => {
+    const updated = Array.isArray(existing)
+      ? existing.map(item => {
+          if (item.taskId === taskId) {
+            console.log(`🛠 Updating field "${field}" for taskId="${taskId}" from "${item[field]}" to "${value}"`);
+            return { ...item, [field]: value };
+          }
+          return item;
+        })
+      : [];
+
+    console.log(`📦 New checklist state after update:`, updated);
+
+    t.set('card', 'shared', { taskChecklist: updated })
+      .then(() => {
+        console.log(`✅ t.set() succeeded — Field "${field}" saved for taskId="${taskId}"`);
+      })
+      .catch(err => {
+        console.error(`❌ t.set() failed for taskId="${taskId}" —`, err);
       });
-    }
+  });
+}
 
     function appendChecklistItem(task) {
       if (isSaving) return;
