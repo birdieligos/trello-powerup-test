@@ -7,30 +7,37 @@
 </head>
 <body>
 <script>
-  // ✅ Background fetch: gets board members silently
   const fetchMembersSilently = (t) => {
-    t.board('id')
+    console.log('🔄 Starting silent member fetch...');
+    return t.board('id')
       .then(board =>
         t.get('member', 'private', 'trello_token')
-          .then(token =>
-            fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`)
-          )
+          .then(token => {
+            console.log('📡 Fetching members for board:', board.id);
+            return fetch(`https://api.trello.com/1/boards/${board.id}/members?key=7443867af11d32c3e8f8152b114201fd&token=${token}`);
+          })
       )
       .then(res => res.json())
       .then(members => {
-        console.log('✅ Members fetched silently:', members);
+        console.log('✅ Members fetched:', members);
         return t.set('board', 'shared', { cachedMembers: members });
       })
-      .catch(err => console.error('❌ Failed to fetch members:', err));
+      .catch(err => {
+        console.error('❌ Failed to fetch members:', err);
+      });
   };
 
-  // ✅ Initialize Power-Up
   window.TrelloPowerUp.initialize({
 
+    // ✅ Auth check
     'authorization-status': t =>
       t.get('member', 'private', 'trello_token')
-        .then(token => ({ authorized: !!token })),
+        .then(token => {
+          console.log('🔐 Auth status:', !!token);
+          return { authorized: !!token };
+        }),
 
+    // ✅ Show auth popup
     'show-authorization': t =>
       t.popup({
         title: 'Authorize',
@@ -38,6 +45,7 @@
         height: 150
       }),
 
+    // ✅ Section shown when card is opened
     'card-back-section': (t) => ({
       title: 'Task Checklist',
       icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
@@ -45,21 +53,30 @@
         type: 'iframe',
         url: t.signUrl('./client.html'),
         height: 500
+      },
+      action: {
+        text: 'Add Task',
+        callback: (t) => {
+          console.log('🟦 "Add Task" button clicked');
+          return t.postMessage({ type: 'add-task-inline' });
+        }
       }
     }),
 
-    // ✅ Triggers on board open (behind the scenes)
-    'capabilitiesRequested': (t, opts) => {
-      console.log('🔄 Board opened: triggering background member fetch');
+    // ✅ Background board fetch — runs invisibly
+    'board-buttons': (t) => {
+      console.log('📌 Board opened — triggering member fetch');
       fetchMembersSilently(t);
       return [];
     },
 
+    // 🔧 Required stubs
     'popup': t => [],
     'card-buttons': t => [],
     'card-badges': t => [],
     'attachment-sections': t => [],
     'card-detail-badges': t => []
+
   });
 </script>
 </body>
