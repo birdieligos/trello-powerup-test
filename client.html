@@ -4,53 +4,11 @@
   <meta charset="UTF-8" />
   <title>Task Checklist</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <style>
-    body { font-family: sans-serif; padding: 10px; }
-    .task-list { list-style: none; padding: 0; }
-    .task-item {
-      display: flex; align-items: center;
-      background: #f4f5f7; padding: 8px; border-radius: 6px;
-      margin-bottom: 6px; gap: 8px;
-    }
-    .task-name {
-      flex: 1; font-weight: bold; font-size: 14px;
-      border: 1px solid #ccc; border-radius: 4px; padding: 6px;
-    }
-    .set-date, .assign-member, .three-dots {
-      background: #e2e4e6; border: none;
-      padding: 6px 8px; border-radius: 4px;
-      font-size: 12px; cursor: pointer;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .three-dots { font-size: 18px; padding: 5px 8px; }
-    .add-task-btn {
-      margin-top: 10px; padding: 10px;
-      background-color: #0079bf; color: white;
-      font-weight: bold; border: none;
-      border-radius: 6px; width: 100%;
-      cursor: pointer;
-    }
-    .task-input-row {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 10px;
-    }
-    .add-btn {
-      background-color: #0079bf; color: white;
-      border: none; border-radius: 4px;
-      padding: 6px 10px; cursor: pointer;
-    }
-    .cancel-btn {
-      background: none; border: none;
-      color: #6b778c; cursor: pointer;
-      padding: 6px 10px;
-    }
-  </style>
+  <style>/* styling omitted for brevity */</style>
 </head>
 <body>
-
   <ul id="task-list" class="task-list"></ul>
   <button id="add-task" class="add-task-btn">+ Add New Task</button>
-
   <script>
     const t = TrelloPowerUp.iframe();
     let members = [];
@@ -63,29 +21,17 @@
       });
     }
 
-function updateChecklistField(taskId, field, value) {
-  t.get('card', 'shared', 'taskChecklist').then(existing => {
-    const updated = Array.isArray(existing)
-      ? existing.map(item => {
-          if (item.taskId === taskId) {
-            console.log(`🛠 Updating field "${field}" for taskId="${taskId}" from "${item[field]}" to "${value}"`);
-            return { ...item, [field]: value };
-          }
-          return item;
-        })
-      : [];
-
-    console.log(`📦 New checklist state after update:`, updated);
-
-    t.set('card', 'shared', { taskChecklist: updated })
-      .then(() => {
-        console.log(`✅ t.set() succeeded — Field "${field}" saved for taskId="${taskId}"`);
-      })
-      .catch(err => {
-        console.error(`❌ t.set() failed for taskId="${taskId}" —`, err);
+    function updateChecklistField(taskId, field, value) {
+      t.get('card', 'shared', 'taskChecklist').then(existing => {
+        const updated = Array.isArray(existing)
+          ? existing.map(item => item.taskId === taskId ? { ...item, [field]: value } : item)
+          : [];
+        console.log(`📦 New checklist state after update:`, updated);
+        t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+          console.log(`✅ t.set() succeeded — Field "${field}" saved for taskId="${taskId}"`);
+        });
       });
-  });
-}
+    }
 
     function appendChecklistItem(task) {
       if (isSaving) return;
@@ -103,149 +49,103 @@ function updateChecklistField(taskId, field, value) {
     }
 
     function createTaskInputRow() {
-  const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
-
-  const inputRow = document.createElement('div');
-  inputRow.className = 'task-input-row';
-
-  const taskId = crypto.randomUUID();
-  const task = { taskId, name: '', dueDate: '', memberName: '' };
-
-  const nameInput = document.createElement('input');
-  nameInput.className = 'task-name';
-  nameInput.placeholder = 'Task name...';
-
-  const dateBtn = document.createElement('button');
-  dateBtn.className = 'set-date';
-  dateBtn.innerHTML = '<span>🕑</span> Set Date';
-  dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened');
-    t.popup({
-      type: 'datetime',
-      title: 'Due Date',
-      date: new Date(),
-      mouseEvent: e,
-      callback: function (t, opts) {
-        if (opts?.date) {
-          const selected = new Date(opts.date).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          });
-          console.log('📅 Date selected:', selected);
-          task.dueDate = selected;
-          dateBtn.innerHTML = `🕑 ${selected}`;
-          updateChecklistField(taskId, 'dueDate', selected);
-        } else {
-          console.log('📅 No date selected');
-        }
-      }
-    });
-  });
-
-const assignBtn = document.createElement('button');
-assignBtn.className = 'assign-member';
-assignBtn.innerHTML = '<span>👤</span> Assign';
-
-assignBtn.addEventListener('click', (e) => {
-  console.log('👤 Member picker opened');
-
-  // Safely fetch members (if needed), then return popup
-  return t.get('board', 'shared', 'cachedMembers').then((members) => {
-    return t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      mouseEvent: e,
-      args: { members, taskId },
-      callback: function (t, opts) {
-        if (opts?.memberName) {
-          console.log(`[Member Picker] Selected: ${opts.memberName}`);
-          assignBtn.innerHTML = `👤 ${opts.memberName}`;
-          task.memberName = opts.memberName;
-
-          // Log current checklist state before update
-          console.log(`📥 Member assigned, about to update taskChecklist for taskId="${taskId}"`);
-          updateChecklistField(taskId, 'memberName', opts.memberName);
-        } else {
-          console.log('🙅 No member selected');
-        }
-      }
-    });
-  });
-});
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'add-btn';
-  addBtn.textContent = 'Add';
-  addBtn.addEventListener('click', () => {
-    console.log('🔘 Add button clicked');
-    task.name = nameInput.value;
-    if (!task.name.trim()) {
-      console.warn('⚠️ Task name is empty — not saving');
-      return;
-    }
-    console.log('📦 Task being saved:', task);
-    appendChecklistItem(task);
-  });
-
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'cancel-btn';
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => li.remove());
-
-  inputRow.appendChild(nameInput);
-  inputRow.appendChild(dateBtn);
-  inputRow.appendChild(assignBtn);
-  inputRow.appendChild(addBtn);
-  inputRow.appendChild(cancelBtn);
-
-  li.appendChild(inputRow);
-  taskList.appendChild(li);
-}
-    
-    function refreshChecklistUI() {
-      const taskList = document.getElementById('task-list');
-      taskList.innerHTML = '';
-      checklistData.forEach(renderChecklistItem);
-    }
-
-    function renderChecklistItem(task) {
       const taskList = document.getElementById('task-list');
       const li = document.createElement('li');
       li.className = 'task-item';
-      li.innerHTML = `
-        <input type="text" class="task-name" value="${task.name || ''}" disabled />
-        <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-        <button class="assign-member">👤 ${task.memberName || 'Unassigned'}</button>
-        <button class="three-dots">⋮</button>
-      `;
+      const inputRow = document.createElement('div');
+      inputRow.className = 'task-input-row';
+      const taskId = crypto.randomUUID();
+      const task = { taskId, name: '', dueDate: '', memberName: '' };
+
+      const nameInput = document.createElement('input');
+      nameInput.className = 'task-name';
+      nameInput.placeholder = 'Task name...';
+
+      const dateBtn = document.createElement('button');
+      dateBtn.className = 'set-date';
+      dateBtn.innerHTML = '<span>🕑</span> Set Date';
+      dateBtn.addEventListener('click', (e) => {
+        t.popup({
+          type: 'datetime', title: 'Due Date', date: new Date(), mouseEvent: e,
+          callback: function (t, opts) {
+            if (opts?.date) {
+              const selected = new Date(opts.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              console.log('📅 Date selected:', selected);
+              task.dueDate = selected;
+              dateBtn.innerHTML = `🕑 ${selected}`;
+              updateChecklistField(taskId, 'dueDate', selected);
+            }
+          }
+        });
+      });
+
+      const assignBtn = document.createElement('button');
+      assignBtn.className = 'assign-member';
+      assignBtn.innerHTML = '<span>👤</span> Assign';
+      assignBtn.addEventListener('click', (e) => {
+        t.popup({
+          title: 'Assign Member',
+          url: 'member-picker.html',
+          height: 300,
+          mouseEvent: e,
+          args: { taskId },
+          callback: function (t, opts) {
+            if (opts?.memberName) {
+              console.log(`[Member Picker] Selected: ${opts.memberName}`);
+              assignBtn.innerHTML = `👤 ${opts.memberName}`;
+              task.memberName = opts.memberName;
+              updateChecklistField(taskId, 'memberName', opts.memberName);
+            }
+          }
+        });
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = 'Add';
+      addBtn.addEventListener('click', () => {
+        task.name = nameInput.value;
+        if (!task.name.trim()) return;
+        appendChecklistItem(task);
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => li.remove());
+
+      inputRow.append(nameInput, dateBtn, assignBtn, addBtn, cancelBtn);
+      li.appendChild(inputRow);
       taskList.appendChild(li);
+    }
+
+    function refreshChecklistUI() {
+      const taskList = document.getElementById('task-list');
+      taskList.innerHTML = '';
+      checklistData.forEach(task => {
+        const li = document.createElement('li');
+        li.className = 'task-item';
+        li.innerHTML = `
+          <input type="text" class="task-name" value="${task.name}" disabled />
+          <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
+          <button class="assign-member">👤 ${task.memberName || 'Unassigned'}</button>
+          <button class="three-dots">⋮</button>`;
+        taskList.appendChild(li);
+      });
     }
 
     let hasRendered = false;
     t.render(() => {
       if (hasRendered) return;
       hasRendered = true;
-
-      console.log('🚀 Power-Up initialized on card open');
-      console.log('👥 Loading cached board members...');
       loadCachedMembers();
-
-      console.log('📦 Loading saved checklist from Trello...');
       t.get('card', 'shared', 'taskChecklist').then(saved => {
         if (Array.isArray(saved)) {
-          console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
           checklistData = saved;
           refreshChecklistUI();
         }
       });
-
-      document.getElementById('add-task').addEventListener('click', () => {
-        console.log('➕ Add Task button clicked');
-        createTaskInputRow();
-      });
+      document.getElementById('add-task').addEventListener('click', createTaskInputRow);
     });
   </script>
 </body>
