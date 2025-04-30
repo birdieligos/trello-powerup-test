@@ -47,39 +47,36 @@
     const list = document.getElementById('member-list');
     const saveBtn = document.getElementById('save-btn');
 
+    const taskId = t.arg('taskId');
+    const members = t.arg('members') || [];
     let selectedMember = null;
-    let taskId = null;
 
-    t.arg('taskId').then(id => taskId = id);
+    members.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
-    t.arg('members').then((members = []) => {
-      members.sort((a, b) => a.fullName.localeCompare(b.fullName));
+    members.forEach(m => {
+      const li = document.createElement('li');
+      li.className = 'member-item';
+      li.innerHTML = `
+        ${m.fullName}
+        <span class="checkmark">✓</span>
+      `;
 
-      members.forEach(m => {
-        const li = document.createElement('li');
-        li.className = 'member-item';
-        li.innerHTML = `
-          ${m.fullName}
-          <span class="checkmark">✓</span>
-        `;
-
-        li.addEventListener('click', () => {
-          document.querySelectorAll('.member-item').forEach(el => {
-            el.classList.remove('selected');
-            el.querySelector('.checkmark').style.display = 'none';
-          });
-          li.classList.add('selected');
-          li.querySelector('.checkmark').style.display = 'inline';
-          selectedMember = m.fullName;
-          console.log(`[Member Picker] Selected: ${selectedMember}`);
+      li.addEventListener('click', () => {
+        document.querySelectorAll('.member-item').forEach(el => {
+          el.classList.remove('selected');
+          el.querySelector('.checkmark').style.display = 'none';
         });
-
-        list.appendChild(li);
+        li.classList.add('selected');
+        li.querySelector('.checkmark').style.display = 'inline';
+        selectedMember = m.fullName;
+        console.log(`[Member Picker] Selected: ${selectedMember}`);
       });
+
+      list.appendChild(li);
     });
 
     saveBtn.addEventListener('click', () => {
-      if (selectedMember && taskId) {
+      if (selectedMember) {
         console.log(`[Member Picker] Save clicked: ${selectedMember}`);
         t.closePopup({ taskId, memberName: selectedMember });
       } else {
