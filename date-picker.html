@@ -1,26 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>Select Due Date</title>
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
-</head>
-<body style="font-family:sans-serif;padding:10px">
-  <input id="date-input" type="date" style="width:100%;padding:6px;font-size:14px" />
-  <script>
-    const t = TrelloPowerUp.iframe();
-    console.log('[Date Picker] Initialized');
-
-    const input = document.getElementById('date-input');
-    input.valueAsDate = new Date();
-    console.log('[Date Picker] Default set to today:', input.value);
-
-    input.addEventListener('change', () => {
-      const val = new Date(input.value);
-      const formatted = val.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      console.log('[Date Picker] User selected:', formatted);
-      t.closePopup(formatted);
-    });
-  </script>
-</body>
-</html>
+dateBtn.addEventListener('click', (e) => {
+  console.log('🕑 Date picker opened');
+  t.popup({
+    type: 'datetime',
+    title: 'Due Date',
+    mouseEvent: e, // ← Required so Trello knows where to anchor popup
+    date: new Date(),
+    callback: function(t, opts) {
+      if (opts?.date) {
+        const selected = new Date(opts.date).toLocaleDateString();
+        console.log('📅 Date selected:', selected);
+        task.dueDate = selected;
+        dateBtn.innerHTML = `🕑 ${selected}`;
+      } else {
+        console.log('📅 No date selected');
+      }
+    }
+  });
+});
