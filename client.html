@@ -117,6 +117,7 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
+          t.closePopup();
         } else {
           console.log('📅 No date selected');
         }
