@@ -29,7 +29,6 @@
 
   window.TrelloPowerUp.initialize({
 
-    // ✅ Auth check
     'authorization-status': t =>
       t.get('member', 'private', 'trello_token')
         .then(token => {
@@ -37,7 +36,6 @@
           return { authorized: !!token };
         }),
 
-    // ✅ Show auth popup
     'show-authorization': t =>
       t.popup({
         title: 'Authorize',
@@ -45,7 +43,6 @@
         height: 150
       }),
 
-    // ✅ Section shown when card is opened
     'card-back-section': (t) => ({
       title: 'Task Checklist',
       icon: 'https://birdieligos.github.io/trello-powerup-test/icon.jpeg',
@@ -57,20 +54,18 @@
       action: {
         text: 'Add Task',
         callback: (t) => {
-          console.log('🟦 "Add Task" button clicked');
+          console.log('🟦 "Add Task" button clicked — sending message to client');
           return t.postMessage({ type: 'add-task-inline' });
         }
       }
     }),
 
-    // ✅ Background board fetch — runs invisibly
     'board-buttons': (t) => {
-      console.log('📌 Board opened — triggering member fetch');
+      console.log('📌 Board opened — fetching members silently');
       fetchMembersSilently(t);
       return [];
     },
 
-    // 🔧 Required stubs
     'popup': t => [],
     'card-buttons': t => [],
     'card-badges': t => [],
