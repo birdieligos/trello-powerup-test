@@ -151,8 +151,8 @@ assignBtn.innerHTML = '<span>👤</span> Assign';
 assignBtn.addEventListener('click', (e) => {
   console.log('👤 Member picker opened');
 
-  // Safely fetch members (if needed), then return popup
-  return t.get('board', 'shared', 'cachedMembers').then((members) => {
+  // Load cached members and open the popup
+  t.get('board', 'shared', 'cachedMembers').then((members) => {
     return t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -161,15 +161,15 @@ assignBtn.addEventListener('click', (e) => {
       args: { members, taskId },
       callback: function (t, opts) {
         if (opts?.memberName) {
-          console.log(`[Member Picker] Selected: ${opts.memberName}`);
-          assignBtn.innerHTML = `👤 ${opts.memberName}`;
-          task.memberName = opts.memberName;
+          const name = opts.memberName;
+          console.log(`[Member Picker] Selected: ${name}`);
+          assignBtn.innerHTML = `👤 ${name}`;
+          task.memberName = name;
 
-          // Log current checklist state before update
-          console.log(`📥 Member assigned, about to update taskChecklist for taskId="${taskId}"`);
-          updateChecklistField(taskId, 'memberName', opts.memberName);
+          console.log(`📥 Updating checklist: taskId="${taskId}" with memberName="${name}"`);
+          updateChecklistField(taskId, 'memberName', name);
         } else {
-          console.log('🙅 No member selected');
+          console.log('🙅 No member selected from popup');
         }
       }
     });
