@@ -61,28 +61,26 @@ let members = [];
 let checklistData = [];
 
 function loadCachedMembers() {
-  console.log('[loadCachedMembers] Fetching from board shared storage...');
   t.get('board', 'shared', 'cachedMembers')
     .then(cached => {
       if (Array.isArray(cached)) {
         members = cached;
-        console.log('✅ Loaded members from shared cache:', members);
-      } else {
-        console.warn('⚠️ No cached members found');
       }
-    })
-    .catch(err => {
-      console.error('❌ Failed to get cached members:', err);
     });
 }
 
 function saveChecklist() {
-  console.log('[saveChecklist] Saving checklistData:', checklistData);
   t.set('card', 'shared', { taskChecklist: checklistData });
 }
 
+function removeAllInputRows() {
+  document.querySelectorAll('.task-input-row').forEach(row => {
+    const li = row.closest('li');
+    if (li) li.remove();
+  });
+}
+
 function createTaskInputRow() {
-  console.log('[createTaskInputRow] Rendering new task input row');
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -105,19 +103,16 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
-    console.log('[set-date] Opening date picker');
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-          console.log('[set-date] Date selected:', selected);
         }
       });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    console.log('[assign-member] Opening member picker');
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
         if (selected?.avatar) {
@@ -127,7 +122,6 @@ function createTaskInputRow() {
           avatar.src = selected.avatar;
           avatar.className = 'member-avatar';
           assignBtn.appendChild(avatar);
-          console.log('[assign-member] Member selected:', selected);
         }
       });
   });
@@ -140,19 +134,15 @@ function createTaskInputRow() {
     if (!task.name.trim()) return;
     const clonedTask = { ...task };
     checklistData.push(clonedTask);
-    console.log('[add-btn] Task added:', clonedTask);
     saveChecklist();
     createTaskItem(clonedTask);
-    li.remove();
+    removeAllInputRows();
   });
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'cancel-btn';
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => {
-    console.log('[cancel-btn] Input row removed');
-    li.remove();
-  });
+  cancelBtn.addEventListener('click', () => li.remove());
 
   inputRow.appendChild(nameInput);
   inputRow.appendChild(dateBtn);
@@ -165,7 +155,6 @@ function createTaskInputRow() {
 }
 
 function createTaskItem(task) {
-  console.log('[createTaskItem] Rendering saved task:', task);
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -181,28 +170,19 @@ function createTaskItem(task) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[DOMContentLoaded] Initializing client script');
   t.render(() => {
-    console.log('[t.render] Triggered');
     loadCachedMembers();
     t.get('card', 'shared', 'taskChecklist')
       .then(saved => {
         if (Array.isArray(saved)) {
           checklistData = saved;
-          console.log('[t.render] Loaded saved checklistData:', checklistData);
           saved.forEach(createTaskItem);
-        } else {
-          console.log('[t.render] No saved checklist data');
         }
       });
   });
 
-  document.getElementById('add-task').addEventListener('click', () => {
-    console.log('[add-task-btn] Add New Task clicked');
-    createTaskInputRow();
-  });
+  document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 });
 </script>
 </body>
 </html>
-
