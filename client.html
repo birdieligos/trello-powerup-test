@@ -161,9 +161,15 @@ function createTaskItem(task) {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
+let initialized = false;
+
 t.render(() => {
-  loadCachedMembers();       // silently loads cached members
-  createTaskInputRow();      // always show one input row by default
+  if (!initialized) {
+    loadCachedMembers();
+    createTaskInputRow();
+    initialized = true;
+  }
+});
 });
 </script>
 </body>
