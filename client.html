@@ -87,9 +87,13 @@ function appendChecklistItem(task) {
   setTimeout(() => { isSaving = false }, 1000);
 
   t.get('card', 'shared', 'taskChecklist').then(existing => {
+    const exists = Array.isArray(existing) && existing.some(t => t.taskId === task.taskId);
+    if (exists) {
+      console.warn(`⚠️ Task with ID ${task.taskId} already exists. Skipping append.`);
+      return;
+    }
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
-
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
       refreshChecklistUI();
@@ -145,7 +149,7 @@ function createTaskInputRow() {
       title: 'Assign Member',
       url: 'member-picker.html',
       height: 300,
-      args: { members },
+      args: { members, taskId },
       mouseEvent: e,
       callback: function(t, selected) {
         if (selected?.name) {
@@ -214,9 +218,7 @@ function renderChecklistItem(task) {
 
 t.render(() => {
   console.log('🚀 Power-Up initialized on card open');
-  console.log('👥 Loading cached board members...');
   loadCachedMembers();
-  console.log('📦 Loading saved checklist from Trello...');
   t.get('card', 'shared', 'taskChecklist')
     .then(saved => {
       if (Array.isArray(saved)) {
