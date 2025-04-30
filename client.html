@@ -59,19 +59,27 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
+let isSaving = false;
 
 function loadCachedMembers() {
-  t.get('board', 'shared', 'cachedMembers')
-    .then(cached => {
-      if (Array.isArray(cached)) {
-        members = cached;
-      }
-    });
+  t.get('board', 'shared', 'cachedMembers').then(cached => {
+    if (Array.isArray(cached)) members = cached;
+  });
 }
 
-function saveChecklistData() {
-  t.set('card', 'shared', { taskChecklist: checklistData })
-    .then(() => console.log('✅ Checklist saved to Trello pluginData'));
+function appendChecklistItem(task) {
+  if (isSaving) return;
+  isSaving = true;
+
+  t.get('card', 'shared', 'taskChecklist').then(existing => {
+    const updated = Array.isArray(existing) ? [...existing, task] : [task];
+    checklistData = updated;
+    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+      console.log('✅ Task appended to Trello storage:', task);
+      refreshChecklistUI();
+      isSaving = false;
+    });
+  });
 }
 
 function removeAllInputRows() {
@@ -89,49 +97,54 @@ function createTaskInputRow() {
   const inputRow = document.createElement('div');
   inputRow.className = 'task-input-row';
 
-  const task = { name: '', dueDate: '', memberAvatar: '' };
-
   const nameInput = document.createElement('input');
   nameInput.className = 'task-name';
   nameInput.placeholder = 'Task name...';
-  nameInput.addEventListener('input', () => {
-    task.name = nameInput.value;
-  });
 
   const dateBtn = document.createElement('button');
   dateBtn.className = 'set-date';
-  dateBtn.innerHTML = '<span>🕑</span> Set Date';
-  dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened');
-    t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
-      .then(selected => {
-        if (selected) {
-          console.log('📅 Date selected:', selected);
-          task.dueDate = selected;
-          dateBtn.innerHTML = `🕑 ${selected}`;
-          saveChecklistData();
-        }
-      });
-  });
+  dateBtn.innerHTML = '🕑 Set Date';
 
   const assignBtn = document.createElement('button');
   assignBtn.className = 'assign-member';
-  assignBtn.innerHTML = '<span>👤</span> Assign';
+  assignBtn.innerHTML = '👤 Assign';
+
+  const task = { name: '', dueDate: '', memberAvatar: '' };
+
+  dateBtn.addEventListener('click', () => {
+    console.log('🕑 [Date Picker] Clicked');
+    t.popup({
+      type: 'datetime',
+      title: 'Due Date',
+      callback: (t, opts) => {
+        console.log('[Date Picker] Selected:', opts.date);
+        task.dueDate = opts.date;
+        dateBtn.innerHTML = `🕑 ${opts.date}`;
+        dateBtn.dataset.dueDate = opts.date;
+      }
+    });
+  });
+
   assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened');
-    t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
-      .then(selected => {
-        if (selected?.avatar) {
-          console.log('🙋 Member selected:', selected.avatar);
-          task.memberAvatar = selected.avatar;
-          assignBtn.innerHTML = '';
-          const avatar = document.createElement('img');
-          avatar.src = selected.avatar;
-          avatar.className = 'member-avatar';
-          assignBtn.appendChild(avatar);
-          saveChecklistData();
-        }
-      });
+    console.log('👤 [Member Picker] Clicked');
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members },
+      mouseEvent: e
+    }).then(selected => {
+      if (selected?.avatar) {
+        console.log('[Member Picker] Selected avatar:', selected.avatar);
+        task.memberAvatar = selected.avatar;
+        assignBtn.innerHTML = '';
+        const avatar = document.createElement('img');
+        avatar.src = selected.avatar;
+        avatar.className = 'member-avatar';
+        assignBtn.appendChild(avatar);
+        assignBtn.dataset.avatar = selected.avatar;
+      }
+    });
   });
 
   const addBtn = document.createElement('button');
@@ -139,14 +152,16 @@ function createTaskInputRow() {
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
     console.log('🔘 Add button clicked');
-    task.name = nameInput.value;
-    if (!task.name.trim()) {
+    task.name = nameInput.value.trim();
+    task.dueDate = dateBtn.dataset.dueDate || '';
+    task.memberAvatar = assignBtn.dataset.avatar || '';
+    if (!task.name) {
       console.warn('⚠️ Task name is empty — not saving');
       return;
     }
-    checklistData.push(task);
-    saveChecklistData();
-    refreshChecklistUI();
+    addBtn.disabled = true;
+    console.log('📦 Task being saved:', task);
+    appendChecklistItem(task);
   });
 
   const cancelBtn = document.createElement('button');
@@ -154,7 +169,7 @@ function createTaskInputRow() {
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
     console.log('🛑 Cancel button clicked — input row will be removed');
-    removeAllInputRows();
+    li.remove();
   });
 
   inputRow.appendChild(nameInput);
@@ -190,18 +205,15 @@ function renderChecklistItem(task) {
 
 t.render(() => {
   console.log('🚀 Power-Up initialized on card open');
-  console.log('👥 Loading cached board members...');
   loadCachedMembers();
   console.log('📦 Loading saved checklist from Trello...');
-  t.get('card', 'shared', 'taskChecklist')
-    .then(saved => {
-      if (Array.isArray(saved)) {
-        console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
-        checklistData = saved;
-        refreshChecklistUI();
-      }
-    });
-
+  t.get('card', 'shared', 'taskChecklist').then(saved => {
+    if (Array.isArray(saved)) {
+      console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
+      checklistData = saved;
+      refreshChecklistUI();
+    }
+  });
   document.getElementById('add-task').addEventListener('click', () => {
     console.log('➕ Add Task button clicked');
     createTaskInputRow();
