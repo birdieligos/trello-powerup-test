@@ -14,7 +14,6 @@
       align-items: center;
       padding: 6px;
       border-radius: 4px;
-      background-color: #f4f5f7;
     }
     li.member-item.selected {
       background-color: #e4f0f6;
@@ -45,43 +44,46 @@
 
   <script>
     const t = TrelloPowerUp.iframe();
-    const members = t.arg('members') || [];
-    const taskId = t.arg('taskId');
     const list = document.getElementById('member-list');
     const saveBtn = document.getElementById('save-btn');
 
     let selectedMember = null;
+    let taskId = null;
 
-    members.sort((a, b) => a.fullName.localeCompare(b.fullName));
+    t.arg('taskId').then(id => taskId = id);
 
-    members.forEach(m => {
-      const li = document.createElement('li');
-      li.className = 'member-item';
-      li.innerHTML = `
-        ${m.fullName}
-        <span class="checkmark">✓</span>
-      `;
+    t.arg('members').then((members = []) => {
+      members.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
-      li.addEventListener('click', () => {
-        document.querySelectorAll('.member-item').forEach(el => {
-          el.classList.remove('selected');
-          el.querySelector('.checkmark').style.display = 'none';
+      members.forEach(m => {
+        const li = document.createElement('li');
+        li.className = 'member-item';
+        li.innerHTML = `
+          ${m.fullName}
+          <span class="checkmark">✓</span>
+        `;
+
+        li.addEventListener('click', () => {
+          document.querySelectorAll('.member-item').forEach(el => {
+            el.classList.remove('selected');
+            el.querySelector('.checkmark').style.display = 'none';
+          });
+          li.classList.add('selected');
+          li.querySelector('.checkmark').style.display = 'inline';
+          selectedMember = m.fullName;
+          console.log(`[Member Picker] Selected: ${selectedMember}`);
         });
-        li.classList.add('selected');
-        li.querySelector('.checkmark').style.display = 'inline';
-        selectedMember = m.fullName;
-        console.log(`[Member Picker] Selected: ${selectedMember}`);
-      });
 
-      list.appendChild(li);
+        list.appendChild(li);
+      });
     });
 
     saveBtn.addEventListener('click', () => {
-      if (selectedMember) {
+      if (selectedMember && taskId) {
         console.log(`[Member Picker] Save clicked: ${selectedMember}`);
         t.closePopup({ taskId, memberName: selectedMember });
       } else {
-        console.log('[Member Picker] Save clicked with no selection');
+        console.log('[Member Picker] Save clicked but no member selected');
       }
     });
   </script>
