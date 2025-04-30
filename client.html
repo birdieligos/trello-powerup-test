@@ -117,14 +117,6 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-
-          t.get('card', 'shared', 'taskChecklist').then(existing => {
-            const updated = Array.isArray(existing) ? [...existing] : [];
-            updated.push(task);
-            t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-              console.log('✅ Due date saved to Trello storage:', updated);
-            });
-          });
         } else {
           console.log('📅 No date selected');
         }
@@ -145,16 +137,6 @@ function createTaskInputRow() {
           console.log('🙋 Member selected:', selected.name);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-
-          t.get('card', 'shared', 'taskChecklist').then(existing => {
-            const updated = Array.isArray(existing) ? [...existing] : [];
-            updated.push(task);
-            t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-              console.log('✅ Member saved to Trello storage:', updated);
-            });
-          });
-
-          t.closePopup();
         } else {
           console.log('🙅 No member selected');
         }
