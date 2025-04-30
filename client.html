@@ -129,30 +129,30 @@ function createTaskInputRow() {
     });
   });
 
-  const assignBtn = document.createElement('button');
-  assignBtn.className = 'assign-member';
-  assignBtn.innerHTML = '<span>👤</span> Assign';
-  assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened');
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members, taskId },
-      mouseEvent: e,
-      callback: function(t, selected) {
-        if (selected?.name) {
-          console.log(`[Member Picker] Selected: ${selected.name}`);
-          task.memberAvatar = selected.name;
-          assignBtn.innerHTML = `👤 ${selected.name}`;
-          updateChecklistField(task.taskId, 'memberAvatar', selected.name);
-          setTimeout(() => t.closePopup(), 300);
-        } else {
-          console.log('🙅 No member selected');
-        }
+const assignBtn = document.createElement('button');
+assignBtn.className = 'assign-member';
+assignBtn.innerHTML = '<span>👤</span> Assign';
+assignBtn.addEventListener('click', (e) => {
+  console.log('👤 Member picker opened');
+  t.popup({
+    title: 'Assign Member',
+    url: 'member-picker.html',
+    height: 300,
+    args: { members, taskId },
+    mouseEvent: e,
+    callback: function(t, selected) {
+      if (selected?.name) {
+        console.log(`[Member Picker] Selected: ${selected.name}`);
+        task.memberAvatar = selected.name;
+        assignBtn.innerHTML = `👤 ${selected.name}`;
+        updateChecklistField(task.taskId, 'memberAvatar', selected.name);
+        // Do NOT close popup here — already closed by member-picker
+      } else {
+        console.log('🙅 No member selected');
       }
-    });
+    }
   });
+});
 
   const addBtn = document.createElement('button');
   addBtn.className = 'add-btn';
