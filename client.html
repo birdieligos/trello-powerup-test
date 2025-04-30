@@ -30,10 +30,6 @@
       border-radius: 6px; width: 100%;
       cursor: pointer;
     }
-    .add-task-btn:disabled {
-      background-color: #b6c2cf;
-      cursor: not-allowed;
-    }
     .task-input-row {
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 10px;
@@ -95,7 +91,6 @@ function removeAllInputRows() {
     const li = row.closest('li');
     if (li) li.remove();
   });
-  document.getElementById('add-task').disabled = false;
 }
 
 function createTaskInputRow() {
@@ -182,8 +177,6 @@ function createTaskInputRow() {
 
   li.appendChild(inputRow);
   taskList.appendChild(li);
-
-  document.getElementById('add-task').disabled = true;
 }
 
 function refreshChecklistUI() {
@@ -222,9 +215,9 @@ t.render(() => {
     });
 
   document.getElementById('add-task').addEventListener('click', () => {
-  console.log('➕ Add Task button clicked');
-  createTaskInputRow();
-});
+    console.log('➕ Add Task button clicked');
+    createTaskInputRow();
+  });
 });
 </script>
 </body>
