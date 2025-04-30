@@ -47,7 +47,6 @@
   </style>
 </head>
 <body>
-
 <ul id="task-list" class="task-list"></ul>
 <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
@@ -60,9 +59,7 @@ let isSaving = false;
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
     .then(cached => {
-      if (Array.isArray(cached)) {
-        members = cached;
-      }
+      if (Array.isArray(cached)) members = cached;
     });
 }
 
@@ -74,7 +71,6 @@ function appendChecklistItem(task) {
   t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
-
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
       refreshChecklistUI();
@@ -117,12 +113,12 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-
           t.get('card', 'shared', 'taskChecklist').then(existing => {
             const updated = Array.isArray(existing) ? [...existing] : [];
             updated.push({ ...task });
             t.set('card', 'shared', { taskChecklist: updated }).then(() => {
               console.log('✅ Due date saved to Trello storage:', updated);
+              t.closePopup();
             });
           });
         } else {
@@ -142,15 +138,15 @@ function createTaskInputRow() {
       mouseEvent: e,
       callback: function(t, selected) {
         if (selected?.name) {
-          console.log('🙋 Member selected:', selected.name);
+          console.log(`[Member Picker] Selected: ${selected.name}`);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-
           t.get('card', 'shared', 'taskChecklist').then(existing => {
             const updated = Array.isArray(existing) ? [...existing] : [];
             updated.push({ ...task });
             t.set('card', 'shared', { taskChecklist: updated }).then(() => {
               console.log('✅ Member assignment saved to Trello storage:', updated);
+              t.closePopup();
             });
           });
         } else {
