@@ -58,7 +58,6 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = [];
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -121,14 +120,11 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', async () => {
-    task.name = nameInput.value.trim();
-    if (!task.name) return;
-
-    const saved = await t.get('card', 'shared', 'taskChecklist') || [];
-    const newList = [...saved, task];
-    await t.set('card', 'shared', { taskChecklist: newList });
-
-    checklistData = newList; // sync local copy
+    task.name = nameInput.value;
+    const checklist = await t.get('card', 'shared', 'taskChecklist') || [];
+    checklist.push(task);
+    await t.set('card', 'shared', { taskChecklist: checklist });
+    console.log('✅ Task saved:', task);
     li.remove();
     createTaskItem(task);
   });
@@ -153,10 +149,15 @@ function createTaskItem(task) {
   const li = document.createElement('li');
   li.className = 'task-item';
 
+  const dateLabel = task.dueDate ? `🕑 ${task.dueDate}` : '🕑 No Date';
+  const memberHTML = task.memberAvatar
+    ? `<img src="${task.memberAvatar}" class="member-avatar" />`
+    : '👤 Unassigned';
+
   li.innerHTML = `
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
-    <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned'}</button>
+    <button class="set-date">${dateLabel}</button>
+    <button class="assign-member">${memberHTML}</button>
     <button class="three-dots">⋮</button>
   `;
 
@@ -171,11 +172,7 @@ t.render(async () => {
   if (!initialized) {
     loadCachedMembers();
     const saved = await t.get('card', 'shared', 'taskChecklist');
-    if (Array.isArray(saved)) {
-      checklistData = saved;
-      saved.forEach(task => createTaskItem(task));
-    }
-    createTaskInputRow();
+    if (Array.isArray(saved)) saved.forEach(createTaskItem);
     initialized = true;
   }
 });
