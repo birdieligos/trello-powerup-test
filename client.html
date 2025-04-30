@@ -63,6 +63,7 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
+let isSaving = false;
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -73,11 +74,24 @@ function loadCachedMembers() {
     });
 }
 
-function saveChecklist(task) {
-  checklistData.push(task);
-  t.set('card', 'shared', { taskChecklist: checklistData });
-  createTaskItem(task);
-  removeAllInputRows();
+function appendChecklistItem(task) {
+  if (isSaving) {
+    console.warn('⛔ Prevented duplicate save');
+    return;
+  }
+  isSaving = true;
+
+  t.get('card', 'shared', 'taskChecklist').then(existing => {
+    const updated = Array.isArray(existing) ? [...existing, task] : [task];
+    checklistData = updated;
+
+    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+      console.log('✅ Task appended to Trello storage:', task);
+      createTaskItem(task);
+      removeAllInputRows();
+      isSaving = false;
+    });
+  });
 }
 
 function removeAllInputRows() {
@@ -153,7 +167,7 @@ function createTaskInputRow() {
     }
     addBtn.disabled = true;
     console.log('📦 Task being saved:', task);
-    saveChecklist(task);
+    appendChecklistItem(task);
   });
 
   const cancelBtn = document.createElement('button');
@@ -192,16 +206,23 @@ function createTaskItem(task) {
 }
 
 t.render(() => {
+  console.log('🚀 Power-Up initialized on card open');
+  console.log('👥 Loading cached board members...');
   loadCachedMembers();
+  console.log('📦 Loading saved checklist from Trello...');
   t.get('card', 'shared', 'taskChecklist')
     .then(saved => {
       if (Array.isArray(saved)) {
+      console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
         checklistData = saved;
         saved.forEach(createTaskItem);
       }
     });
 
-  document.getElementById('add-task').addEventListener('click', createTaskInputRow);
+  document.getElementById('add-task').addEventListener('click', () => {
+  console.log('➕ Add Task button clicked');
+  createTaskInputRow();
+});
 });
 </script>
 </body>
