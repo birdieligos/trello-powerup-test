@@ -57,7 +57,15 @@
             li.querySelector('.checkmark').style.display = 'inline';
 
             setTimeout(() => {
-              t.closePopup({ id: m.id, name: m.fullName });
+              t.get('card', 'shared', 'taskChecklist').then(existing => {
+                const updated = Array.isArray(existing) ? [...existing] : [];
+                const last = updated.length > 0 ? updated[updated.length - 1] : { name: '', dueDate: '', memberAvatar: '' };
+                last.memberAvatar = m.fullName;
+                t.set('card', 'shared', { taskChecklist: [...updated.slice(0, -1), last] }).then(() => {
+                  console.log('✅ Member updated and saved:', last);
+                  t.closePopup({ id: m.id, name: m.fullName });
+                });
+              });
             }, 300);
           });
 
