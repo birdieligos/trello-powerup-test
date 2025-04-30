@@ -87,7 +87,6 @@ function appendChecklistItem(task) {
 
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
-      createTaskItem(task);
       removeAllInputRows();
       isSaving = false;
     });
