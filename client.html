@@ -48,176 +48,183 @@
 </head>
 <body>
 
-<ul id="task-list" class="task-list"></ul>
-<button id="add-task" class="add-task-btn">+ Add New Task</button>
+  <ul id="task-list" class="task-list"></ul>
+  <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
-<script>
-const t = TrelloPowerUp.iframe();
-let members = [];
-let checklistData = [];
-let isSaving = false;
+  <script>
+    const t = TrelloPowerUp.iframe();
+    let members = [];
+    let checklistData = [];
+    let isSaving = false;
 
-function loadCachedMembers() {
-  t.get('board', 'shared', 'cachedMembers').then(cached => {
-    if (Array.isArray(cached)) members = cached;
-  });
-}
-
-function updateChecklistField(taskId, field, value) {
-  t.get('card', 'shared', 'taskChecklist').then(existing => {
-    const updated = Array.isArray(existing) ? existing.map(item => {
-      if (item.taskId === taskId) return { ...item, [field]: value };
-      return item;
-    }) : [];
-    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-      console.log(`✅ Task ${field} updated to Trello storage for taskId=${taskId}`);
-    });
-  });
-}
-
-function appendChecklistItem(task) {
-  if (isSaving) return;
-  isSaving = true;
-  setTimeout(() => { isSaving = false }, 1000);
-
-  t.get('card', 'shared', 'taskChecklist').then(existing => {
-    const updated = Array.isArray(existing) ? [...existing, task] : [task];
-    checklistData = updated;
-    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-      console.log('✅ Task appended to Trello storage:', task);
-      refreshChecklistUI();
-    });
-  });
-}
-
-function createTaskInputRow() {
-  const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
-
-  const inputRow = document.createElement('div');
-  inputRow.className = 'task-input-row';
-
-  const taskId = crypto.randomUUID();
-  const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
-
-  const nameInput = document.createElement('input');
-  nameInput.className = 'task-name';
-  nameInput.placeholder = 'Task name...';
-
-  const dateBtn = document.createElement('button');
-  dateBtn.className = 'set-date';
-  dateBtn.innerHTML = '<span>🕑</span> Set Date';
-  dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened');
-    t.popup({
-      type: 'datetime',
-      title: 'Due Date',
-      date: new Date(),
-      mouseEvent: e,
-      callback: function(t, opts) {
-        if (opts?.date) {
-          const selected = new Date(opts.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          console.log('📅 Date selected:', selected);
-          task.dueDate = selected;
-          dateBtn.innerHTML = `🕑 ${selected}`;
-          updateChecklistField(task.taskId, 'dueDate', selected);
-        } else {
-          console.log('📅 No date selected');
-        }
-      }
-    });
-  });
-
-  const assignBtn = document.createElement('button');
-  assignBtn.className = 'assign-member';
-  assignBtn.innerHTML = '<span>👤</span> Assign';
-  assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened');
-    t.popup({
-      title: 'Assign Member',
-      url: 'member-picker.html',
-      height: 300,
-      args: { members, taskId },
-      mouseEvent: e,
-      callback: function(t, selected) {
-        if (selected?.name) {
-          console.log(`[Member Picker] Selected: ${selected.name}`);
-          task.memberAvatar = selected.name;
-          assignBtn.innerHTML = `👤 ${selected.name}`;
-          updateChecklistField(task.taskId, 'memberAvatar', selected.name);
-        } else {
-          console.log('🙅 No member selected');
-        }
-      }
-    });
-  });
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'add-btn';
-  addBtn.textContent = 'Add';
-  addBtn.addEventListener('click', () => {
-    console.log('🔘 Add button clicked');
-    task.name = nameInput.value;
-    if (!task.name.trim()) {
-      console.warn('⚠️ Task name is empty — not saving');
-      return;
+    function loadCachedMembers() {
+      t.get('board', 'shared', 'cachedMembers').then(cached => {
+        if (Array.isArray(cached)) members = cached;
+      });
     }
-    console.log('📦 Task being saved:', task);
-    appendChecklistItem(task);
-  });
 
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'cancel-btn';
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => li.remove());
-
-  inputRow.appendChild(nameInput);
-  inputRow.appendChild(dateBtn);
-  inputRow.appendChild(assignBtn);
-  inputRow.appendChild(addBtn);
-  inputRow.appendChild(cancelBtn);
-
-  li.appendChild(inputRow);
-  taskList.appendChild(li);
-}
-
-function refreshChecklistUI() {
-  const taskList = document.getElementById('task-list');
-  taskList.innerHTML = '';
-  checklistData.forEach(renderChecklistItem);
-}
-
-function renderChecklistItem(task) {
-  const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
-  li.innerHTML = `
-    <input type="text" class="task-name" value="${task.name || ''}" disabled />
-    <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-    <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
-    <button class="three-dots">⋮</button>
-  `;
-  taskList.appendChild(li);
-}
-
-let hasRendered = false;
-t.render(() => {
-  if (hasRendered) return;
-  hasRendered = true;
-
-  console.log('🚀 Power-Up initialized on card open');
-  console.log('👥 Loading cached board members...');
-  loadCachedMembers();
-  console.log('📦 Loading saved checklist from Trello...');
-  t.get('card', 'shared', 'taskChecklist').then(saved => {
-    if (Array.isArray(saved)) {
-      console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
-      checklistData = saved;
-      refreshChecklistUI();
+    function updateChecklistField(taskId, field, value) {
+      t.get('card', 'shared', 'taskChecklist').then(existing => {
+        const updated = Array.isArray(existing)
+          ? existing.map(item => item.taskId === taskId ? { ...item, [field]: value } : item)
+          : [];
+        t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+          console.log(`✅ Task ${field} updated to Trello storage for taskId=${taskId}`);
+        });
+      });
     }
-  });
-});
-</script>
+
+    function appendChecklistItem(task) {
+      if (isSaving) return;
+      isSaving = true;
+      setTimeout(() => { isSaving = false }, 1000);
+
+      t.get('card', 'shared', 'taskChecklist').then(existing => {
+        const updated = Array.isArray(existing) ? [...existing, task] : [task];
+        checklistData = updated;
+        t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+          console.log('✅ Task appended to Trello storage:', task);
+          refreshChecklistUI();
+        });
+      });
+    }
+
+    function createTaskInputRow() {
+      const taskList = document.getElementById('task-list');
+      const li = document.createElement('li');
+      li.className = 'task-item';
+
+      const inputRow = document.createElement('div');
+      inputRow.className = 'task-input-row';
+
+      const taskId = crypto.randomUUID();
+      const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
+
+      const nameInput = document.createElement('input');
+      nameInput.className = 'task-name';
+      nameInput.placeholder = 'Task name...';
+
+      const dateBtn = document.createElement('button');
+      dateBtn.className = 'set-date';
+      dateBtn.innerHTML = '<span>🕑</span> Set Date';
+      dateBtn.addEventListener('click', (e) => {
+        console.log('🕑 Date picker opened');
+        t.popup({
+          type: 'datetime',
+          title: 'Due Date',
+          date: new Date(),
+          mouseEvent: e,
+          callback: function(t, opts) {
+            if (opts?.date) {
+              const selected = new Date(opts.date).toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric'
+              });
+              console.log('📅 Date selected:', selected);
+              task.dueDate = selected;
+              dateBtn.innerHTML = `🕑 ${selected}`;
+              updateChecklistField(task.taskId, 'dueDate', selected);
+            } else {
+              console.log('📅 No date selected');
+            }
+          }
+        });
+      });
+
+      const assignBtn = document.createElement('button');
+      assignBtn.className = 'assign-member';
+      assignBtn.innerHTML = '<span>👤</span> Assign';
+      assignBtn.addEventListener('click', (e) => {
+        console.log('👤 Member picker opened');
+        t.popup({
+          title: 'Assign Member',
+          url: 'member-picker.html',
+          height: 300,
+          args: { members, taskId },
+          mouseEvent: e,
+          callback: function(t, selected) {
+            if (selected?.name) {
+              console.log(`[Member Picker] Selected: ${selected.name}`);
+              task.memberAvatar = selected.name;
+              assignBtn.innerHTML = `👤 ${selected.name}`;
+              updateChecklistField(task.taskId, 'memberAvatar', selected.name);
+            } else {
+              console.log('🙅 No member selected');
+            }
+          }
+        });
+      });
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-btn';
+      addBtn.textContent = 'Add';
+      addBtn.addEventListener('click', () => {
+        console.log('🔘 Add button clicked');
+        task.name = nameInput.value;
+        if (!task.name.trim()) {
+          console.warn('⚠️ Task name is empty — not saving');
+          return;
+        }
+        console.log('📦 Task being saved:', task);
+        appendChecklistItem(task);
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => li.remove());
+
+      inputRow.appendChild(nameInput);
+      inputRow.appendChild(dateBtn);
+      inputRow.appendChild(assignBtn);
+      inputRow.appendChild(addBtn);
+      inputRow.appendChild(cancelBtn);
+
+      li.appendChild(inputRow);
+      taskList.appendChild(li);
+    }
+
+    function refreshChecklistUI() {
+      const taskList = document.getElementById('task-list');
+      taskList.innerHTML = '';
+      checklistData.forEach(renderChecklistItem);
+    }
+
+    function renderChecklistItem(task) {
+      const taskList = document.getElementById('task-list');
+      const li = document.createElement('li');
+      li.className = 'task-item';
+      li.innerHTML = `
+        <input type="text" class="task-name" value="${task.name || ''}" disabled />
+        <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
+        <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
+        <button class="three-dots">⋮</button>
+      `;
+      taskList.appendChild(li);
+    }
+
+    let hasRendered = false;
+    t.render(() => {
+      if (hasRendered) return;
+      hasRendered = true;
+
+      console.log('🚀 Power-Up initialized on card open');
+      console.log('👥 Loading cached board members...');
+      loadCachedMembers();
+
+      console.log('📦 Loading saved checklist from Trello...');
+      t.get('card', 'shared', 'taskChecklist').then(saved => {
+        if (Array.isArray(saved)) {
+          console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
+          checklistData = saved;
+          refreshChecklistUI();
+        }
+      });
+
+      document.getElementById('add-task').addEventListener('click', () => {
+        console.log('➕ Add Task button clicked');
+        createTaskInputRow();
+      });
+    });
+  </script>
 </body>
 </html>
