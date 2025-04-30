@@ -58,25 +58,19 @@ let checklistData = [];
 let isSaving = false;
 
 function loadCachedMembers() {
-  t.get('board', 'shared', 'cachedMembers')
-    .then(cached => {
-      if (Array.isArray(cached)) {
-        members = cached;
-      }
-    });
+  t.get('board', 'shared', 'cachedMembers').then(cached => {
+    if (Array.isArray(cached)) members = cached;
+  });
 }
 
 function updateChecklistField(taskId, field, value) {
   t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? existing.map(item => {
-      if (item.taskId === taskId) {
-        return { ...item, [field]: value };
-      }
+      if (item.taskId === taskId) return { ...item, [field]: value };
       return item;
     }) : [];
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log(`✅ Task ${field} updated to Trello storage for taskId=${taskId}`);
-      setTimeout(() => t.closePopup(), 300);
     });
   });
 }
@@ -87,11 +81,6 @@ function appendChecklistItem(task) {
   setTimeout(() => { isSaving = false }, 1000);
 
   t.get('card', 'shared', 'taskChecklist').then(existing => {
-    const exists = Array.isArray(existing) && existing.some(t => t.taskId === task.taskId);
-    if (exists) {
-      console.warn(`⚠️ Task with ID ${task.taskId} already exists. Skipping append.`);
-      return;
-    }
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
@@ -133,6 +122,7 @@ function createTaskInputRow() {
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
           updateChecklistField(task.taskId, 'dueDate', selected);
+          setTimeout(() => t.closePopup(), 300);
         } else {
           console.log('📅 No date selected');
         }
@@ -157,6 +147,7 @@ function createTaskInputRow() {
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
           updateChecklistField(task.taskId, 'memberAvatar', selected.name);
+          setTimeout(() => t.closePopup(), 300);
         } else {
           console.log('🙅 No member selected');
         }
@@ -181,9 +172,7 @@ function createTaskInputRow() {
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'cancel-btn';
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => {
-    li.remove();
-  });
+  cancelBtn.addEventListener('click', () => li.remove());
 
   inputRow.appendChild(nameInput);
   inputRow.appendChild(dateBtn);
@@ -205,28 +194,27 @@ function renderChecklistItem(task) {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
-
   li.innerHTML = `
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
     <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
     <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
     <button class="three-dots">⋮</button>
   `;
-
   taskList.appendChild(li);
 }
 
 t.render(() => {
   console.log('🚀 Power-Up initialized on card open');
+  console.log('👥 Loading cached board members...');
   loadCachedMembers();
-  t.get('card', 'shared', 'taskChecklist')
-    .then(saved => {
-      if (Array.isArray(saved)) {
-        console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
-        checklistData = saved;
-        refreshChecklistUI();
-      }
-    });
+  console.log('📦 Loading saved checklist from Trello...');
+  t.get('card', 'shared', 'taskChecklist').then(saved => {
+    if (Array.isArray(saved)) {
+      console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
+      checklistData = saved;
+      refreshChecklistUI();
+    }
+  });
 
   document.getElementById('add-task').addEventListener('click', () => {
     console.log('➕ Add Task button clicked');
