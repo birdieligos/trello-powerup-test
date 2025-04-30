@@ -117,22 +117,16 @@ function createTaskInputRow() {
       mouseEvent: e,
       callback: function(t, opts) {
         if (opts?.date) {
-          const selected = new Date(opts.date).toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric'
-          });
+          const selected = new Date(opts.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
-
-          const index = checklistData.findIndex(item => item === task);
-          if (index !== -1) checklistData[index] = task;
-          t.set('card', 'shared', { taskChecklist: checklistData })
-            .then(() => console.log('📌 Due date saved to Trello:', task.dueDate));
-
           dateBtn.innerHTML = `🕑 ${selected}`;
+
+          // Optional: update Trello storage
+          console.log('📤 Storing selected due date to task object only (not saving yet)');
         } else {
           console.log('📅 No date selected');
         }
-        return t.closePopup();
       }
     });
   });
@@ -145,11 +139,6 @@ function createTaskInputRow() {
           console.log('🙋 Member selected:', selected.name);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-
-          const index = checklistData.findIndex(item => item === task);
-          if (index !== -1) checklistData[index] = task;
-          t.set('card', 'shared', { taskChecklist: checklistData })
-            .then(() => console.log('📌 Member saved to Trello:', task.memberAvatar));
         }
       });
   });
