@@ -18,6 +18,12 @@
       background-color: #e4f0f6;
       font-weight: bold;
     }
+    .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
     .checkmark {
       margin-left: auto;
       color: black;
@@ -44,9 +50,15 @@
         members.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
         members.forEach(m => {
+          const avatar = m.avatarUrl || `https://trello-members.s3.amazonaws.com/${m.id}/170.png`;
+
           const li = document.createElement('li');
           li.className = 'member-item';
-          li.innerHTML = `👤 ${m.fullName} <span class="checkmark" style="display:none">✓</span>`;
+          li.innerHTML = `
+            <img src="${avatar}" class="avatar" />
+            ${m.fullName}
+            <span class="checkmark" style="display:none">✓</span>
+          `;
 
           li.addEventListener('click', () => {
             console.log(`[Member Picker] Selected: ${m.fullName}`);
@@ -58,7 +70,12 @@
             li.querySelector('.checkmark').style.display = 'inline';
 
             setTimeout(() => {
-              t.closePopup({ taskId, name: m.fullName });
+              t.closePopup({
+                taskId,
+                name: m.fullName,
+                id: m.id,
+                avatarUrl: avatar
+              });
             }, 300);
           });
 
