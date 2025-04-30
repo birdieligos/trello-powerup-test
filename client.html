@@ -56,6 +56,7 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
 let isSaving = false;
+let isAddingTask = false;
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -83,6 +84,9 @@ function appendChecklistItem(task) {
 }
 
 function createTaskInputRow() {
+  if (isAddingTask) return;
+  isAddingTask = true;
+
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -117,11 +121,6 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-
-          t.get('card', 'shared', 'taskChecklist').then(existing => {
-            const updated = Array.isArray(existing) ? [...existing] : [];
-            t.set('card', 'shared', { taskChecklist: updated });
-          });
         } else {
           console.log('📅 No date selected');
         }
@@ -136,19 +135,16 @@ function createTaskInputRow() {
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      mouseEvent: e
-    }).then(selected => {
-      if (selected?.name) {
-        console.log('🙋 Member selected:', selected.name);
-        task.memberAvatar = selected.name;
-        assignBtn.innerHTML = `👤 ${selected.name}`;
-
-        t.get('card', 'shared', 'taskChecklist').then(existing => {
-          const updated = Array.isArray(existing) ? [...existing] : [];
-          t.set('card', 'shared', { taskChecklist: updated });
-        });
-      } else {
-        console.log('🙅 No member selected');
+      mouseEvent: e,
+      callback: function(t, selected) {
+        if (selected?.name) {
+          console.log('🙋 Member selected:', selected.name);
+          task.memberAvatar = selected.name;
+          assignBtn.innerHTML = `👤 ${selected.name}`;
+          t.closePopup();
+        } else {
+          console.log('🙅 No member selected');
+        }
       }
     });
   });
@@ -165,6 +161,8 @@ function createTaskInputRow() {
     }
     console.log('📦 Task being saved:', task);
     appendChecklistItem(task);
+    li.remove();
+    isAddingTask = false;
   });
 
   const cancelBtn = document.createElement('button');
@@ -172,6 +170,7 @@ function createTaskInputRow() {
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
     li.remove();
+    isAddingTask = false;
   });
 
   inputRow.appendChild(nameInput);
