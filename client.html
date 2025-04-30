@@ -90,99 +90,100 @@
     }
 
     function createTaskInputRow() {
-      const taskList = document.getElementById('task-list');
-      const li = document.createElement('li');
-      li.className = 'task-item';
+  const taskList = document.getElementById('task-list');
+  const li = document.createElement('li');
+  li.className = 'task-item';
 
-      const inputRow = document.createElement('div');
-      inputRow.className = 'task-input-row';
+  const inputRow = document.createElement('div');
+  inputRow.className = 'task-input-row';
 
-      const taskId = crypto.randomUUID();
-      const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
+  const taskId = crypto.randomUUID();
+  const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
 
-      const nameInput = document.createElement('input');
-      nameInput.className = 'task-name';
-      nameInput.placeholder = 'Task name...';
+  const nameInput = document.createElement('input');
+  nameInput.className = 'task-name';
+  nameInput.placeholder = 'Task name...';
 
-      const dateBtn = document.createElement('button');
-      dateBtn.className = 'set-date';
-      dateBtn.innerHTML = '<span>🕑</span> Set Date';
-      dateBtn.addEventListener('click', (e) => {
-        console.log('🕑 Date picker opened');
-        t.popup({
-          type: 'datetime',
-          title: 'Due Date',
-          date: new Date(),
-          mouseEvent: e,
-          callback: function(t, opts) {
-            if (opts?.date) {
-              const selected = new Date(opts.date).toLocaleDateString('en-US', {
-                month: 'short', day: 'numeric'
-              });
-              console.log('📅 Date selected:', selected);
-              task.dueDate = selected;
-              dateBtn.innerHTML = `🕑 ${selected}`;
-              updateChecklistField(task.taskId, 'dueDate', selected);
-            } else {
-              console.log('📅 No date selected');
-            }
-          }
-        });
-      });
-
-      const assignBtn = document.createElement('button');
-      assignBtn.className = 'assign-member';
-      assignBtn.innerHTML = '<span>👤</span> Assign';
-      assignBtn.addEventListener('click', (e) => {
-        console.log('👤 Member picker opened');
-        t.popup({
-          title: 'Assign Member',
-          url: 'member-picker.html',
-          height: 300,
-          args: { members, taskId },
-          mouseEvent: e,
-          callback: function(t, selected) {
-            if (selected?.name) {
-              console.log(`[Member Picker] Selected: ${selected.name}`);
-              task.memberAvatar = selected.name;
-              assignBtn.innerHTML = `👤 ${selected.name}`;
-              updateChecklistField(task.taskId, 'memberAvatar', selected.name);
-            } else {
-              console.log('🙅 No member selected');
-            }
-          }
-        });
-      });
-
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-btn';
-      addBtn.textContent = 'Add';
-      addBtn.addEventListener('click', () => {
-        console.log('🔘 Add button clicked');
-        task.name = nameInput.value;
-        if (!task.name.trim()) {
-          console.warn('⚠️ Task name is empty — not saving');
-          return;
+  const dateBtn = document.createElement('button');
+  dateBtn.className = 'set-date';
+  dateBtn.innerHTML = '<span>🕑</span> Set Date';
+  dateBtn.addEventListener('click', (e) => {
+    console.log('🕑 Date picker opened');
+    t.popup({
+      type: 'datetime',
+      title: 'Due Date',
+      date: new Date(),
+      mouseEvent: e,
+      callback: function (t, opts) {
+        if (opts?.date) {
+          const selected = new Date(opts.date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
+          });
+          console.log('📅 Date selected:', selected);
+          task.dueDate = selected;
+          dateBtn.innerHTML = `🕑 ${selected}`;
+          updateChecklistField(taskId, 'dueDate', selected);
+        } else {
+          console.log('📅 No date selected');
         }
-        console.log('📦 Task being saved:', task);
-        appendChecklistItem(task);
-      });
+      }
+    });
+  });
 
-      const cancelBtn = document.createElement('button');
-      cancelBtn.className = 'cancel-btn';
-      cancelBtn.textContent = 'Cancel';
-      cancelBtn.addEventListener('click', () => li.remove());
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'assign-member';
+  assignBtn.innerHTML = '<span>👤</span> Assign';
+  assignBtn.addEventListener('click', (e) => {
+    console.log('👤 Member picker opened');
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members, taskId },
+      mouseEvent: e,
+      callback: function (t, selected) {
+        if (selected?.name) {
+          console.log(`[Member Picker] Selected: ${selected.name}`);
+          assignBtn.innerHTML = `👤 ${selected.name}`;
+          task.memberAvatar = selected.name;
+          updateChecklistField(taskId, 'memberAvatar', selected.name);
+        } else {
+          console.log('🙅 No member selected');
+        }
+      }
+    });
+  });
 
-      inputRow.appendChild(nameInput);
-      inputRow.appendChild(dateBtn);
-      inputRow.appendChild(assignBtn);
-      inputRow.appendChild(addBtn);
-      inputRow.appendChild(cancelBtn);
-
-      li.appendChild(inputRow);
-      taskList.appendChild(li);
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-btn';
+  addBtn.textContent = 'Add';
+  addBtn.addEventListener('click', () => {
+    console.log('🔘 Add button clicked');
+    task.name = nameInput.value;
+    if (!task.name.trim()) {
+      console.warn('⚠️ Task name is empty — not saving');
+      return;
     }
+    console.log('📦 Task being saved:', task);
+    appendChecklistItem(task);
+  });
 
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'cancel-btn';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => li.remove());
+
+  inputRow.appendChild(nameInput);
+  inputRow.appendChild(dateBtn);
+  inputRow.appendChild(assignBtn);
+  inputRow.appendChild(addBtn);
+  inputRow.appendChild(cancelBtn);
+
+  li.appendChild(inputRow);
+  taskList.appendChild(li);
+}
+    
     function refreshChecklistUI() {
       const taskList = document.getElementById('task-list');
       taskList.innerHTML = '';
