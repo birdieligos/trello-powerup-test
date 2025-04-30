@@ -109,29 +109,33 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened');
+    console.log('🕑 Date picker opened for task:', task.name);
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
-          console.log('📅 Date selected:', selected);
+          console.log('📅 Date selected for task:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
+        } else {
+          console.log('📅 No date selected');
         }
       });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened');
+    console.log('👤 Member picker opened for task:', task.name);
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
         if (selected?.avatar) {
-          console.log('🙋 Member selected:', selected.avatar);
+          console.log('🙋 Member selected for task:', selected.avatar);
           task.memberAvatar = selected.avatar;
           assignBtn.innerHTML = '';
           const avatar = document.createElement('img');
           avatar.src = selected.avatar;
           avatar.className = 'member-avatar';
           assignBtn.appendChild(avatar);
+        } else {
+          console.log('🙋 No member selected');
         }
       });
   });
