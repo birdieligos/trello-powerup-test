@@ -121,9 +121,14 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', async () => {
-    task.name = nameInput.value;
-    checklistData.push(task);
-    await t.set('card', 'shared', { taskChecklist: checklistData });
+    task.name = nameInput.value.trim();
+    if (!task.name) return;
+
+    const saved = await t.get('card', 'shared', 'taskChecklist') || [];
+    const newList = [...saved, task];
+    await t.set('card', 'shared', { taskChecklist: newList });
+
+    checklistData = newList; // sync local copy
     li.remove();
     createTaskItem(task);
   });
@@ -162,9 +167,14 @@ document.getElementById('add-task').addEventListener('click', createTaskInputRow
 
 let initialized = false;
 
-t.render(() => {
+t.render(async () => {
   if (!initialized) {
     loadCachedMembers();
+    const saved = await t.get('card', 'shared', 'taskChecklist');
+    if (Array.isArray(saved)) {
+      checklistData = saved;
+      saved.forEach(task => createTaskItem(task));
+    }
     createTaskInputRow();
     initialized = true;
   }
