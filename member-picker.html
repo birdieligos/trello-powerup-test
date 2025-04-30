@@ -46,9 +46,9 @@
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
     const saveBtn = document.getElementById('save-btn');
-
     const taskId = t.arg('taskId');
     const members = t.arg('members') || [];
+
     let selectedMember = null;
 
     members.sort((a, b) => a.fullName.localeCompare(b.fullName));
