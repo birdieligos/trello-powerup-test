@@ -34,10 +34,6 @@
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 10px;
     }
-    .member-avatar {
-      width: 20px; height: 20px;
-      border-radius: 50%; object-fit: cover;
-    }
     .add-btn {
       background-color: #0079bf; color: white;
       border: none; border-radius: 4px;
@@ -121,9 +117,6 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-
-          // Optional: update Trello storage
-          console.log('📤 Storing selected due date to task object only (not saving yet)');
         } else {
           console.log('📅 No date selected');
         }
@@ -133,14 +126,23 @@ function createTaskInputRow() {
 
   assignBtn.addEventListener('click', (e) => {
     console.log('👤 Member picker opened');
-    t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
-      .then(selected => {
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members },
+      mouseEvent: e,
+      callback: function(t, selected) {
         if (selected?.name) {
           console.log('🙋 Member selected:', selected.name);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
+          t.closePopup();
+        } else {
+          console.log('🙅 No member selected');
         }
-      });
+      }
+    });
   });
 
   const addBtn = document.createElement('button');
