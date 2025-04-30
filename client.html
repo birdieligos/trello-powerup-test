@@ -117,7 +117,6 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-          t.closePopup();
         } else {
           console.log('📅 No date selected');
         }
@@ -132,16 +131,14 @@ function createTaskInputRow() {
       url: 'member-picker.html',
       height: 300,
       args: { members },
-      mouseEvent: e,
-      callback: function(t, selected) {
-        if (selected?.name) {
-          console.log('🙋 Member selected:', selected.name);
-          task.memberAvatar = selected.name;
-          assignBtn.innerHTML = `👤 ${selected.name}`;
-          t.closePopup();
-        } else {
-          console.log('🙅 No member selected');
-        }
+      mouseEvent: e
+    }).then(selected => {
+      if (selected?.name) {
+        console.log('🙋 Member selected:', selected.name);
+        task.memberAvatar = selected.name;
+        assignBtn.innerHTML = `👤 ${selected.name}`;
+      } else {
+        console.log('🙅 No member selected');
       }
     });
   });
@@ -211,11 +208,15 @@ t.render(() => {
         refreshChecklistUI();
       }
     });
+});
 
-  document.getElementById('add-task').addEventListener('click', () => {
-    console.log('➕ Add Task button clicked');
+// Listen for postMessage from index.html
+window.addEventListener('message', (event) => {
+  const { type } = event.data || {};
+  if (type === 'add-task-inline') {
+    console.log('💬 Received postMessage: add-task-inline');
     createTaskInputRow();
-  });
+  }
 });
 </script>
 </body>
