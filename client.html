@@ -86,17 +86,7 @@ function appendChecklistItem(task) {
   });
 }
 
-function removeAllInputRows() {
-  document.querySelectorAll('.task-input-row').forEach(row => {
-    const li = row.closest('li');
-    if (li) li.remove();
-  });
-}
-
 function createTaskInputRow() {
-  const existingInput = document.querySelector('.task-input-row');
-  if (existingInput) return;
-
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -166,7 +156,7 @@ function createTaskInputRow() {
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
     console.log('🛑 Cancel button clicked — input row will be removed');
-    removeAllInputRows();
+    li.remove();
   });
 
   inputRow.appendChild(nameInput);
