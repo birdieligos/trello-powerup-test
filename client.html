@@ -74,6 +74,26 @@ function loadCachedMembers() {
     });
 }
 
+function createTaskItem(task) {
+  const taskList = document.getElementById('task-list');
+  const li = document.createElement('li');
+  li.className = 'task-item';
+
+  const dueDateText = task.dueDate ? `🕑 ${task.dueDate}` : '🕑 No Date';
+  const memberHTML = task.memberAvatar
+    ? `<img src="${task.memberAvatar}" class="member-avatar" />`
+    : '👤 Unassigned';
+
+  li.innerHTML = `
+    <input type="text" class="task-name" value="${task.name || ''}" disabled />
+    <button class="set-date">${dueDateText}</button>
+    <button class="assign-member">${memberHTML}</button>
+    <button class="three-dots">⋮</button>
+  `;
+
+  taskList.appendChild(li);
+}
+
 function createTaskInputRow() {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
@@ -121,10 +141,9 @@ function createTaskInputRow() {
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', async () => {
     task.name = nameInput.value;
-    const checklist = await t.get('card', 'shared', 'taskChecklist') || [];
-    checklist.push(task);
-    await t.set('card', 'shared', { taskChecklist: checklist });
-    console.log('✅ Task saved:', task);
+    const saved = await t.get('card', 'shared', 'taskChecklist') || [];
+    const updated = [...saved, task];
+    await t.set('card', 'shared', { taskChecklist: updated });
     li.remove();
     createTaskItem(task);
   });
@@ -144,35 +163,14 @@ function createTaskInputRow() {
   taskList.appendChild(li);
 }
 
-function createTaskItem(task) {
-  const taskList = document.getElementById('task-list');
-  const li = document.createElement('li');
-  li.className = 'task-item';
-
-  const dateLabel = task.dueDate ? `🕑 ${task.dueDate}` : '🕑 No Date';
-  const memberHTML = task.memberAvatar
-    ? `<img src="${task.memberAvatar}" class="member-avatar" />`
-    : '👤 Unassigned';
-
-  li.innerHTML = `
-    <input type="text" class="task-name" value="${task.name || ''}" disabled />
-    <button class="set-date">${dateLabel}</button>
-    <button class="assign-member">${memberHTML}</button>
-    <button class="three-dots">⋮</button>
-  `;
-
-  taskList.appendChild(li);
-}
-
-document.getElementById('add-task').addEventListener('click', createTaskInputRow);
-
 let initialized = false;
+document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
 t.render(async () => {
   if (!initialized) {
     loadCachedMembers();
     const saved = await t.get('card', 'shared', 'taskChecklist');
-    if (Array.isArray(saved)) saved.forEach(createTaskItem);
+    if (Array.isArray(saved)) saved.forEach(task => createTaskItem(task));
     initialized = true;
   }
 });
