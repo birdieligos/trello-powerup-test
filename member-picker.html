@@ -30,8 +30,8 @@
 
   <script>
     const t = TrelloPowerUp.iframe();
-    const list = document.getElementById('member-list');
     const taskId = t.arg('taskId');
+    const list = document.getElementById('member-list');
 
     async function loadMembers() {
       try {
@@ -57,21 +57,17 @@
             li.classList.add('selected');
             li.querySelector('.checkmark').style.display = 'inline';
 
-            setTimeout(() => {
-              t.get('card', 'shared', 'taskChecklist').then(existing => {
-                const updated = Array.isArray(existing) ? [...existing] : [];
-                const newList = updated.map(item => {
-                  if (item.taskId === taskId) {
-                    return { ...item, memberAvatar: m.fullName };
-                  }
-                  return item;
-                });
-                t.set('card', 'shared', { taskChecklist: newList }).then(() => {
-                  console.log(`✅ Member '${m.fullName}' saved to task with ID: ${taskId}`);
+            t.get('card', 'shared', 'taskChecklist').then(existing => {
+              const updated = (existing || []).map(item =>
+                item.taskId === taskId ? { ...item, memberAvatar: m.fullName } : item
+              );
+              t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+                console.log(`✅ Member '${m.fullName}' saved to task with ID: ${taskId}`);
+                setTimeout(() => {
                   t.closePopup({ id: m.id, name: m.fullName });
-                });
+                }, 300);
               });
-            }, 300);
+            });
           });
 
           list.appendChild(li);
