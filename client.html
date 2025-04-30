@@ -217,7 +217,7 @@ t.render(() => {
       if (Array.isArray(saved)) {
         console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
         checklistData = saved;
-        saved.forEach(renderChecklistItem);
+        refreshChecklistUI();
       }
     });
 
