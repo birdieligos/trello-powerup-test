@@ -78,12 +78,13 @@ function appendChecklistItem(task) {
   if (isSaving) return;
   isSaving = true;
 
-  // Append task directly without reloading saved list
+  t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
 
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
+      renderChecklistItem(task);
       removeAllInputRows();
       isSaving = false;
     });
