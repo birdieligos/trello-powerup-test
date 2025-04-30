@@ -86,13 +86,6 @@ function appendChecklistItem(task) {
   });
 }
 
-function updateChecklistStorage() {
-  t.set('card', 'shared', { taskChecklist: checklistData }).then(() => {
-    console.log('🔄 Checklist data updated in Trello storage');
-    refreshChecklistUI();
-  });
-}
-
 function createTaskInputRow() {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
@@ -124,16 +117,22 @@ function createTaskInputRow() {
       mouseEvent: e,
       callback: function(t, opts) {
         if (opts?.date) {
-          const selected = new Date(opts.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const selected = new Date(opts.date).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric'
+          });
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
+
+          const index = checklistData.findIndex(item => item === task);
+          if (index !== -1) checklistData[index] = task;
+          t.set('card', 'shared', { taskChecklist: checklistData })
+            .then(() => console.log('📌 Due date saved to Trello:', task.dueDate));
+
           dateBtn.innerHTML = `🕑 ${selected}`;
-          checklistData.push(task);
-          updateChecklistStorage();
         } else {
           console.log('📅 No date selected');
         }
-        t.closePopup();
+        return t.closePopup();
       }
     });
   });
@@ -146,8 +145,11 @@ function createTaskInputRow() {
           console.log('🙋 Member selected:', selected.name);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-          checklistData.push(task);
-          updateChecklistStorage();
+
+          const index = checklistData.findIndex(item => item === task);
+          if (index !== -1) checklistData[index] = task;
+          t.set('card', 'shared', { taskChecklist: checklistData })
+            .then(() => console.log('📌 Member saved to Trello:', task.memberAvatar));
         }
       });
   });
