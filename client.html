@@ -58,6 +58,7 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
+let checklistData = [];
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -72,6 +73,12 @@ function loadCachedMembers() {
     .catch(err => {
       console.error('❌ Failed to get cached members:', err);
     });
+}
+
+function saveChecklist() {
+  t.set('card', 'shared', { taskChecklist: checklistData })
+    .then(() => console.log('✅ Checklist saved'))
+    .catch(err => console.error('❌ Error saving checklist:', err));
 }
 
 function createTaskInputRow() {
@@ -120,13 +127,11 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    console.log('📝 Task added (UI only):', {
-      name: nameInput.value,
-      dueDate: task.dueDate,
-      memberAvatar: task.memberAvatar
-    });
+    task.name = nameInput.value;
+    checklistData.push(task);
+    saveChecklist();
     li.remove();
-    createTaskItem({ ...task, name: nameInput.value });
+    createTaskItem(task);
   });
 
   const cancelBtn = document.createElement('button');
@@ -159,18 +164,28 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
+function loadChecklist() {
+  t.get('card', 'shared', 'taskChecklist')
+    .then(saved => {
+      if (Array.isArray(saved)) {
+        checklistData = saved;
+        saved.forEach(task => createTaskItem(task));
+        console.log('✅ Loaded saved checklist');
+      }
+    })
+    .catch(err => console.error('❌ Error loading checklist:', err));
+}
+
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-t.render(() => {
-  loadCachedMembers();
-  createTaskInputRow();
-});
+let initialized = false;
 
-// ✅ Listen for messages from index.html (Add Task action)
-window.addEventListener('message', (event) => {
-  if (event?.data?.type === 'add-task-inline') {
-    console.log('📥 Received message to add task inline');
+t.render(() => {
+  if (!initialized) {
+    loadCachedMembers();
+    loadChecklist();
     createTaskInputRow();
+    initialized = true;
   }
 });
 </script>
