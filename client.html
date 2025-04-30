@@ -122,7 +122,11 @@ function createTaskInputRow() {
       .then(selected => {
         if (selected?.avatar) {
           task.memberAvatar = selected.avatar;
-          assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+          assignBtn.innerHTML = '';
+          const avatar = document.createElement('img');
+          avatar.src = selected.avatar;
+          avatar.className = 'member-avatar';
+          assignBtn.appendChild(avatar);
           console.log('[assign-member] Member selected:', selected);
         }
       });
@@ -201,3 +205,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
