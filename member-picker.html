@@ -31,6 +31,7 @@
   <script>
     const t = TrelloPowerUp.iframe();
     const list = document.getElementById('member-list');
+    const taskId = t.arg('taskId');
 
     async function loadMembers() {
       try {
@@ -41,12 +42,6 @@
         console.log(`[Member Picker] Loaded ${members.length} members`);
 
         members.sort((a, b) => a.fullName.localeCompare(b.fullName));
-
-        const taskId = t.arg('taskId');
-        if (!taskId) {
-          console.error('❌ No taskId provided to member-picker popup');
-          return;
-        }
 
         members.forEach(m => {
           const li = document.createElement('li');
@@ -62,24 +57,14 @@
             li.classList.add('selected');
             li.querySelector('.checkmark').style.display = 'inline';
 
-            // Save the memberAvatar to the correct task
-            t.get('card', 'shared', 'taskChecklist').then(existing => {
-              const updated = Array.isArray(existing)
-                ? existing.map(item =>
-                    item.taskId === taskId ? { ...item, memberAvatar: m.fullName } : item
-                  )
-                : [];
-              t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-                console.log(`✅ Member '${m.fullName}' saved to task with ID: ${taskId}`);
-                setTimeout(() => {
-                  t.closePopup({ id: m.id, name: m.fullName });
-                }, 300);
-              });
-            });
+            setTimeout(() => {
+              t.closePopup({ taskId, name: m.fullName });
+            }, 300);
           });
 
           list.appendChild(li);
         });
+
       } catch (err) {
         list.innerHTML = `<li style="color:red">⚠️ Failed to load members</li>`;
         console.error('[Member Picker] Error loading members:', err);
