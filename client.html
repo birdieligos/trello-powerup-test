@@ -59,7 +59,6 @@
 const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
-let isSaving = false;
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -70,19 +69,15 @@ function loadCachedMembers() {
     });
 }
 
-function appendChecklistItem(task) {
-  if (isSaving) return;
-  isSaving = true;
+function saveChecklistData() {
+  t.set('card', 'shared', { taskChecklist: checklistData })
+    .then(() => console.log('✅ Checklist saved to Trello pluginData'));
+}
 
-  t.get('card', 'shared', 'taskChecklist').then(existing => {
-    const updated = Array.isArray(existing) ? [...existing, task] : [task];
-    checklistData = updated;
-
-    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-      console.log('✅ Task appended to Trello storage:', task);
-      refreshChecklistUI();
-      isSaving = false;
-    });
+function removeAllInputRows() {
+  document.querySelectorAll('.task-input-row').forEach(row => {
+    const li = row.closest('li');
+    if (li) li.remove();
   });
 }
 
@@ -94,48 +89,47 @@ function createTaskInputRow() {
   const inputRow = document.createElement('div');
   inputRow.className = 'task-input-row';
 
+  const task = { name: '', dueDate: '', memberAvatar: '' };
+
   const nameInput = document.createElement('input');
   nameInput.className = 'task-name';
   nameInput.placeholder = 'Task name...';
+  nameInput.addEventListener('input', () => {
+    task.name = nameInput.value;
+  });
 
   const dateBtn = document.createElement('button');
   dateBtn.className = 'set-date';
   dateBtn.innerHTML = '<span>🕑</span> Set Date';
-
-  const assignBtn = document.createElement('button');
-  assignBtn.className = 'assign-member';
-  assignBtn.innerHTML = '<span>👤</span> Assign';
-
-  const task = { name: '', dueDate: '', memberAvatar: '' };
-
   dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened for task:', task.name);
+    console.log('🕑 Date picker opened');
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
-          console.log('📅 Date selected for task:', selected);
+          console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-        } else {
-          console.log('📅 No date selected');
+          saveChecklistData();
         }
       });
   });
 
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'assign-member';
+  assignBtn.innerHTML = '<span>👤</span> Assign';
   assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened for task:', task.name);
+    console.log('👤 Member picker opened');
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
         if (selected?.avatar) {
-          console.log('🙋 Member selected for task:', selected.avatar);
+          console.log('🙋 Member selected:', selected.avatar);
           task.memberAvatar = selected.avatar;
           assignBtn.innerHTML = '';
           const avatar = document.createElement('img');
           avatar.src = selected.avatar;
           avatar.className = 'member-avatar';
           assignBtn.appendChild(avatar);
-        } else {
-          console.log('🙋 No member selected');
+          saveChecklistData();
         }
       });
   });
@@ -150,9 +144,9 @@ function createTaskInputRow() {
       console.warn('⚠️ Task name is empty — not saving');
       return;
     }
-    addBtn.disabled = true;
-    console.log('📦 Task being saved:', task);
-    appendChecklistItem(task);
+    checklistData.push(task);
+    saveChecklistData();
+    refreshChecklistUI();
   });
 
   const cancelBtn = document.createElement('button');
@@ -160,7 +154,7 @@ function createTaskInputRow() {
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
     console.log('🛑 Cancel button clicked — input row will be removed');
-    li.remove();
+    removeAllInputRows();
   });
 
   inputRow.appendChild(nameInput);
