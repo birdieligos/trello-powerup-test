@@ -58,11 +58,6 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = [];
-
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -125,11 +120,13 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value;
-    checklistData.push(task);
-    saveChecklist();
+    console.log('📝 Task added (UI only):', {
+      name: nameInput.value,
+      dueDate: task.dueDate,
+      memberAvatar: task.memberAvatar
+    });
     li.remove();
-    createTaskItem(task);
+    createTaskItem({ ...task, name: nameInput.value });
   });
 
   const cancelBtn = document.createElement('button');
@@ -152,30 +149,22 @@ function createTaskItem(task) {
   const li = document.createElement('li');
   li.className = 'task-item';
 
-  const dueDisplay = task.dueDate ? `🕑 ${task.dueDate}` : '🕑 No Date';
-  const memberDisplay = task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned';
-
   li.innerHTML = `
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
-    <button class="set-date">${dueDisplay}</button>
-    <button class="assign-member">${memberDisplay}</button>
+    <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
+    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned'}</button>
     <button class="three-dots">⋮</button>
   `;
 
   taskList.appendChild(li);
 }
 
+// ✅ Only runs when card is opened (not browser refresh)
 t.render(() => {
+  console.log('🧩 Card opened — initializing task checklist UI');
   loadCachedMembers();
-  t.get('card', 'shared', 'taskChecklist').then(saved => {
-    if (Array.isArray(saved)) {
-      checklistData = saved;
-      saved.forEach(task => createTaskItem(task));
-    }
-  });
+  createTaskInputRow();
 });
-
-document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 </script>
 </body>
 </html>
