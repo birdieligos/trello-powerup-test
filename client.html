@@ -81,7 +81,7 @@ function appendChecklistItem(task) {
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
       refreshChecklistUI();
-      isSaving = false;
+      setTimeout(() => { isSaving = false; }, 1000); // Add 1s delay between adds
     });
   });
 }
@@ -115,20 +115,20 @@ function createTaskInputRow() {
 
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
-  dateBtn.addEventListener('click', (e) => {
-    console.log(`📅 Native datetime popup opened for task: ${task.name || '[unnamed]'}`);
+  dateBtn.addEventListener('click', () => {
+    console.log('🕑 Date picker opened');
     t.popup({
       type: 'datetime',
-      title: 'Select Due Date',
+      title: 'Due Date',
       date: new Date(),
       callback: function(t, opts) {
         if (opts?.date) {
-          const localDate = new Date(opts.date).toLocaleDateString();
-          task.dueDate = localDate;
-          dateBtn.innerHTML = `🕑 ${localDate}`;
-          console.log('📅 Date selected via Trello native popup:', opts.date);
+          const selected = new Date(opts.date).toLocaleDateString();
+          console.log('📅 Date selected:', selected);
+          task.dueDate = selected;
+          dateBtn.innerHTML = `🕑 ${selected}`;
         } else {
-          console.log('📅 No date selected via Trello popup');
+          console.log('📅 No date selected');
         }
       }
     });
@@ -170,7 +170,7 @@ function createTaskInputRow() {
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
     console.log('🛑 Cancel button clicked — input row will be removed');
-    li.remove();
+    removeAllInputRows();
   });
 
   inputRow.appendChild(nameInput);
