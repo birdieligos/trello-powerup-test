@@ -122,7 +122,6 @@ function createTaskInputRow() {
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
           updateChecklistField(task.taskId, 'dueDate', selected);
-          setTimeout(() => t.closePopup(), 300);
         } else {
           console.log('📅 No date selected');
         }
