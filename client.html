@@ -30,6 +30,10 @@
       border-radius: 6px; width: 100%;
       cursor: pointer;
     }
+    .add-task-btn:disabled {
+      background-color: #b6c2cf;
+      cursor: not-allowed;
+    }
     .task-input-row {
       display: flex; align-items: center; gap: 8px;
       margin-bottom: 10px;
@@ -78,9 +82,13 @@ function removeAllInputRows() {
     const li = row.closest('li');
     if (li) li.remove();
   });
+  document.getElementById('add-task').disabled = false;
 }
 
 function createTaskInputRow() {
+  const existingInput = document.querySelector('.task-input-row');
+  if (existingInput) return; // Prevent multiple input rows
+
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
   li.className = 'task-item';
@@ -132,17 +140,16 @@ function createTaskInputRow() {
   addBtn.addEventListener('click', () => {
     task.name = nameInput.value;
     if (!task.name.trim()) return;
-    const clonedTask = { ...task };
-    checklistData.push(clonedTask);
+    checklistData.push(task);
     saveChecklist();
-    createTaskItem(clonedTask);
+    createTaskItem(task);
     removeAllInputRows();
   });
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'cancel-btn';
   cancelBtn.textContent = 'Cancel';
-  cancelBtn.addEventListener('click', () => li.remove());
+  cancelBtn.addEventListener('click', () => removeAllInputRows());
 
   inputRow.appendChild(nameInput);
   inputRow.appendChild(dateBtn);
@@ -152,6 +159,8 @@ function createTaskInputRow() {
 
   li.appendChild(inputRow);
   taskList.appendChild(li);
+
+  document.getElementById('add-task').disabled = true;
 }
 
 function createTaskItem(task) {
