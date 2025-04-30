@@ -76,21 +76,7 @@ function loadCachedMembers() {
 }
 
 function saveChecklist() {
-  t.set('card', 'shared', { checklistData });
-  console.log('💾 Checklist saved:', checklistData);
-}
-
-function restoreChecklist() {
-  t.get('card', 'shared', 'checklistData')
-    .then(data => {
-      if (Array.isArray(data)) {
-        checklistData = data;
-        console.log('♻️ Restoring saved checklist items:', data);
-        data.forEach(task => createTaskItem(task));
-      } else {
-        console.log('📭 No saved checklist to restore');
-      }
-    });
+  t.set('card', 'shared', { taskChecklist: checklistData });
 }
 
 function createTaskInputRow() {
@@ -140,10 +126,11 @@ function createTaskInputRow() {
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
     task.name = nameInput.value;
+    if (!task.name.trim()) return;
     checklistData.push(task);
     saveChecklist();
+    createTaskItem(task); // only create this new item
     li.remove();
-    createTaskItem(task);
   });
 
   const cancelBtn = document.createElement('button');
@@ -176,12 +163,18 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
-document.getElementById('add-task').addEventListener('click', createTaskInputRow);
-
 t.render(() => {
   loadCachedMembers();
-  restoreChecklist();
+  t.get('card', 'shared', 'taskChecklist')
+    .then(saved => {
+      if (Array.isArray(saved)) {
+        checklistData = saved;
+        saved.forEach(createTaskItem);
+      }
+    });
 });
+
+document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 </script>
 </body>
 </html>
