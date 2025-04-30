@@ -160,14 +160,14 @@ assignBtn.addEventListener('click', (e) => {
       mouseEvent: e,
       args: { members, taskId },
       callback: function (t, opts) {
-        if (opts?.name) {
-          console.log(`[Member Picker] Selected: ${opts.name}`);
-          assignBtn.innerHTML = `👤 ${opts.name}`;
-          task.memberName = opts.name;
+        if (opts?.memberName) {
+          console.log(`[Member Picker] Selected: ${opts.memberName}`);
+          assignBtn.innerHTML = `👤 ${opts.memberName}`;
+          task.memberName = opts.memberName;
 
           // Log current checklist state before update
           console.log(`📥 Member assigned, about to update taskChecklist for taskId="${taskId}"`);
-          updateChecklistField(taskId, 'memberName', opts.name);
+          updateChecklistField(taskId, 'memberName', opts.memberName);
         } else {
           console.log('🙅 No member selected');
         }
