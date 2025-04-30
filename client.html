@@ -3,14 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Task Checklist</title>
-  <script src="https://p.trellocdn.com/power-up.min.js">
-function finalizeTask(task) {
-  checklistData.push(task);
-  saveChecklist();
-  createTaskItem(task);
-  removeAllInputRows();
-}
-</script>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
   <style>
     body { font-family: sans-serif; padding: 10px; }
     .task-list { list-style: none; padding: 0; }
@@ -85,7 +78,6 @@ function saveChecklist(task) {
   t.set('card', 'shared', { taskChecklist: checklistData });
   createTaskItem(task);
   removeAllInputRows();
-});
 }
 
 function removeAllInputRows() {
@@ -98,7 +90,7 @@ function removeAllInputRows() {
 
 function createTaskInputRow() {
   const existingInput = document.querySelector('.task-input-row');
-  if (existingInput) return; // Prevent multiple input rows
+  if (existingInput) return;
 
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
@@ -149,10 +141,10 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-  task.name = nameInput.value;
-  if (!task.name.trim()) return;
-  saveChecklist(task);
-});
+    task.name = nameInput.value;
+    if (!task.name.trim()) return;
+    saveChecklist(task);
+  });
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'cancel-btn';
