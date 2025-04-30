@@ -129,30 +129,29 @@ function createTaskInputRow() {
     });
   });
 
-const assignBtn = document.createElement('button');
-assignBtn.className = 'assign-member';
-assignBtn.innerHTML = '<span>👤</span> Assign';
-assignBtn.addEventListener('click', (e) => {
-  console.log('👤 Member picker opened');
-  t.popup({
-    title: 'Assign Member',
-    url: 'member-picker.html',
-    height: 300,
-    args: { members, taskId },
-    mouseEvent: e,
-    callback: function(t, selected) {
-      if (selected?.name) {
-        console.log(`[Member Picker] Selected: ${selected.name}`);
-        task.memberAvatar = selected.name;
-        assignBtn.innerHTML = `👤 ${selected.name}`;
-        updateChecklistField(task.taskId, 'memberAvatar', selected.name);
-        // Do NOT close popup here — already closed by member-picker
-      } else {
-        console.log('🙅 No member selected');
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'assign-member';
+  assignBtn.innerHTML = '<span>👤</span> Assign';
+  assignBtn.addEventListener('click', (e) => {
+    console.log('👤 Member picker opened');
+    t.popup({
+      title: 'Assign Member',
+      url: 'member-picker.html',
+      height: 300,
+      args: { members, taskId },
+      mouseEvent: e,
+      callback: function(t, selected) {
+        if (selected?.name) {
+          console.log(`[Member Picker] Selected: ${selected.name}`);
+          task.memberAvatar = selected.name;
+          assignBtn.innerHTML = `👤 ${selected.name}`;
+          updateChecklistField(task.taskId, 'memberAvatar', selected.name);
+        } else {
+          console.log('🙅 No member selected');
+        }
       }
-    }
+    });
   });
-});
 
   const addBtn = document.createElement('button');
   addBtn.className = 'add-btn';
@@ -202,7 +201,11 @@ function renderChecklistItem(task) {
   taskList.appendChild(li);
 }
 
+let hasRendered = false;
 t.render(() => {
+  if (hasRendered) return;
+  hasRendered = true;
+
   console.log('🚀 Power-Up initialized on card open');
   console.log('👥 Loading cached board members...');
   loadCachedMembers();
@@ -213,11 +216,6 @@ t.render(() => {
       checklistData = saved;
       refreshChecklistUI();
     }
-  });
-
-  document.getElementById('add-task').addEventListener('click', () => {
-    console.log('➕ Add Task button clicked');
-    createTaskInputRow();
   });
 });
 </script>
