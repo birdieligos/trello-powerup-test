@@ -58,6 +58,11 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
+let checklistData = [];
+
+function saveChecklist() {
+  t.set('card', 'shared', { taskChecklist: checklistData });
+}
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -120,13 +125,12 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    console.log('📝 Task added (UI only):', {
-      name: nameInput.value,
-      dueDate: task.dueDate,
-      memberAvatar: task.memberAvatar
-    });
+    task.name = nameInput.value;
+    checklistData.push(task);
+    saveChecklist();
+    console.log('📝 Task added and saved:', task);
     li.remove();
-    createTaskItem({ ...task, name: nameInput.value });
+    createTaskItem(task);
   });
 
   const cancelBtn = document.createElement('button');
