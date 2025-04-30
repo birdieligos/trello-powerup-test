@@ -101,12 +101,20 @@ function createTaskInputRow() {
 
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
+  nameInput.addEventListener('input', () => {
+    task.name = nameInput.value;
+    console.log('✏️ Task name updated:', task.name);
+    saveChecklist();
+  });
+
   dateBtn.addEventListener('click', (e) => {
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
+          console.log('📅 Task date updated:', task.dueDate);
+          saveChecklist();
         }
       });
   });
@@ -117,6 +125,8 @@ function createTaskInputRow() {
         if (selected?.avatar) {
           task.memberAvatar = selected.avatar;
           assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
+          console.log('🙋 Assigned member updated:', selected.avatar);
+          saveChecklist();
         }
       });
   });
@@ -125,11 +135,10 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value;
     checklistData.push(task);
-    saveChecklist();
     li.remove();
     createTaskItem(task);
+    saveChecklist();
   });
 
   const cancelBtn = document.createElement('button');
@@ -162,22 +171,16 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
-function restoreChecklist() {
-  t.get('card', 'shared', 'taskChecklist')
-    .then(stored => {
-      if (Array.isArray(stored)) {
-        checklistData = stored;
-        stored.forEach(task => createTaskItem(task));
-      }
-    })
-    .catch(err => console.error('❌ Failed to restore checklist:', err));
-}
-
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
 t.render(() => {
   loadCachedMembers();
-  restoreChecklist();
+  t.get('card', 'shared', 'taskChecklist').then(data => {
+    if (Array.isArray(data)) {
+      checklistData = data;
+      data.forEach(createTaskItem);
+    }
+  });
 });
 </script>
 </body>
