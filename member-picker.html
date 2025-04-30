@@ -4,9 +4,29 @@
   <meta charset="utf-8" />
   <title>Select Member</title>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <style>
+    ul { list-style: none; padding: 0; margin: 0; }
+    li.member-item {
+      margin-bottom: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 6px;
+      border-radius: 4px;
+    }
+    li.member-item.selected {
+      background-color: #e4f0f6;
+      font-weight: bold;
+    }
+    .checkmark {
+      margin-left: auto;
+      color: black;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body style="font-family:sans-serif;padding:10px">
-  <ul id="member-list" style="list-style:none;padding:0;margin:0"></ul>
+  <ul id="member-list"></ul>
 
   <script>
     const t = TrelloPowerUp.iframe();
@@ -20,19 +40,29 @@
         const members = await res.json();
         console.log(`[Member Picker] Loaded ${members.length} members`);
 
-        members
-          .sort((a, b) => a.fullName.localeCompare(b.fullName))
-          .forEach(m => {
-            const li = document.createElement('li');
-            li.style.marginBottom = '10px';
-            li.style.cursor = 'pointer';
-            li.textContent = `👤 ${m.fullName}`;
-            li.addEventListener('click', () => {
-              console.log(`[Member Picker] Selected: ${m.fullName}`);
-              t.closePopup({ id: m.id, name: m.fullName });
+        members.sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+        members.forEach(m => {
+          const li = document.createElement('li');
+          li.className = 'member-item';
+          li.innerHTML = `👤 ${m.fullName} <span class="checkmark" style="display:none">✓</span>`;
+
+          li.addEventListener('click', () => {
+            console.log(`[Member Picker] Selected: ${m.fullName}`);
+            document.querySelectorAll('.member-item').forEach(el => {
+              el.classList.remove('selected');
+              el.querySelector('.checkmark').style.display = 'none';
             });
-            list.appendChild(li);
+            li.classList.add('selected');
+            li.querySelector('.checkmark').style.display = 'inline';
+
+            setTimeout(() => {
+              t.closePopup({ id: m.id, name: m.fullName });
+            }, 300);
           });
+
+          list.appendChild(li);
+        });
 
       } catch (err) {
         list.innerHTML = `<li style="color:red">⚠️ Failed to load members</li>`;
