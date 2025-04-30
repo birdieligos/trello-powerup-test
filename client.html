@@ -114,9 +114,11 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
+    console.log('🕑 Date picker opened');
     t.popup({ title: 'Select Due Date', url: 'date-picker.html', height: 130, mouseEvent: e })
       .then(selected => {
         if (selected) {
+          console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
         }
@@ -124,9 +126,11 @@ function createTaskInputRow() {
   });
 
   assignBtn.addEventListener('click', (e) => {
+    console.log('👤 Member picker opened');
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
         if (selected?.avatar) {
+          console.log('🙋 Member selected:', selected.avatar);
           task.memberAvatar = selected.avatar;
           assignBtn.innerHTML = '';
           const avatar = document.createElement('img');
@@ -141,8 +145,14 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
+    console.log('🔘 Add button clicked');
     task.name = nameInput.value;
-    if (!task.name.trim()) return;
+    if (!task.name.trim()) {
+      console.warn('⚠️ Task name is empty — not saving');
+      return;
+    }
+    addBtn.disabled = true;
+    console.log('📦 Task being saved:', task);
     saveChecklist(task);
   });
 
@@ -150,6 +160,7 @@ function createTaskInputRow() {
   cancelBtn.className = 'cancel-btn';
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
+    console.log('🛑 Cancel button clicked — input row will be removed');
     removeAllInputRows();
   });
 
