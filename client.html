@@ -137,21 +137,22 @@ assignBtn.innerHTML = '<span>👤</span> Assign';
 assignBtn.addEventListener('click', (e) => {
   console.log('👤 Member picker opened');
   t.popup({
+    type: 'popup',
     title: 'Assign Member',
     url: 'member-picker.html',
     height: 300,
-    args: { members, taskId },
     mouseEvent: e,
-    callback: ((taskCopy => (t, selected) => {
-      if (selected?.name) {
-        console.log(`[Member Picker] Selected: ${selected.name}`);
-        assignBtn.innerHTML = `👤 ${selected.name}`;
-        taskCopy.memberAvatar = selected.name;
-        updateChecklistField(taskId, 'memberAvatar', selected.name);
+    args: { members, taskId },
+    callback: function (t, opts) {
+      if (opts?.name) {
+        console.log(`[Member Picker] Selected: ${opts.name}`);
+        assignBtn.innerHTML = `👤 ${opts.name}`;
+        task.memberAvatar = opts.name;
+        updateChecklistField(taskId, 'memberAvatar', opts.name);
       } else {
         console.log('🙅 No member selected');
       }
-    })(task))
+    }
   });
 });
 
