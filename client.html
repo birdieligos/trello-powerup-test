@@ -186,7 +186,7 @@ function renderChecklistItem(task) {
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
     <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
     <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
-    <button class="three-dots">⋮</button>
+    <button class="three-dots">\u22EE</button>
   `;
 
   taskList.appendChild(li);
