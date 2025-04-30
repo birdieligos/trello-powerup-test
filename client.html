@@ -60,13 +60,16 @@ const t = TrelloPowerUp.iframe();
 let members = [];
 let checklistData = [];
 
+function saveChecklist() {
+  t.set('card', 'shared', { taskChecklist: checklistData });
+}
+
 function loadCachedMembers() {
-  console.log('🔄 Loading cached members...');
   t.get('board', 'shared', 'cachedMembers')
     .then(cached => {
       if (Array.isArray(cached)) {
         members = cached;
-        console.log('✅ Loaded members:', members);
+        console.log('✅ Loaded members from shared cache');
       } else {
         console.warn('⚠️ No cached members found');
       }
@@ -74,11 +77,6 @@ function loadCachedMembers() {
     .catch(err => {
       console.error('❌ Failed to get cached members:', err);
     });
-}
-
-function saveChecklist() {
-  console.log('💾 Saving checklistData:', checklistData);
-  t.set('card', 'shared', { taskChecklist: checklistData });
 }
 
 function createTaskInputRow() {
@@ -108,7 +106,6 @@ function createTaskInputRow() {
       .then(selected => {
         if (selected) {
           task.dueDate = selected;
-          console.log('📅 Selected Due Date:', selected);
           dateBtn.innerHTML = `🕑 ${selected}`;
         }
       });
@@ -119,7 +116,6 @@ function createTaskInputRow() {
       .then(selected => {
         if (selected?.avatar) {
           task.memberAvatar = selected.avatar;
-          console.log('👤 Selected Member:', selected.avatar);
           assignBtn.innerHTML = `<img src="${selected.avatar}" class="member-avatar" />`;
         }
       });
@@ -129,8 +125,7 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value.trim();
-    console.log('📝 Final task:', task);
+    task.name = nameInput.value;
     checklistData.push(task);
     saveChecklist();
     li.remove();
@@ -157,10 +152,13 @@ function createTaskItem(task) {
   const li = document.createElement('li');
   li.className = 'task-item';
 
+  const dueDisplay = task.dueDate ? `🕑 ${task.dueDate}` : '🕑 No Date';
+  const memberDisplay = task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned';
+
   li.innerHTML = `
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
-    <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned'}</button>
+    <button class="set-date">${dueDisplay}</button>
+    <button class="assign-member">${memberDisplay}</button>
     <button class="three-dots">⋮</button>
   `;
 
@@ -168,22 +166,16 @@ function createTaskItem(task) {
 }
 
 t.render(() => {
-  console.log('⚙️ Rendering Power-Up UI...');
   loadCachedMembers();
-  t.get('card', 'shared', 'taskChecklist')
-    .then(saved => {
-      if (Array.isArray(saved)) {
-        checklistData = saved;
-        saved.forEach(createTaskItem);
-        console.log('✅ Loaded saved checklist items');
-      } else {
-        console.log('📭 No checklist data found');
-      }
-    })
-    .catch(err => console.error('❌ Failed to load checklist data:', err));
-
-  document.getElementById('add-task').addEventListener('click', createTaskInputRow);
+  t.get('card', 'shared', 'taskChecklist').then(saved => {
+    if (Array.isArray(saved)) {
+      checklistData = saved;
+      saved.forEach(task => createTaskItem(task));
+    }
+  });
 });
+
+document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 </script>
 </body>
 </html>
