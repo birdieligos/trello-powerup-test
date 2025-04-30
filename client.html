@@ -70,22 +70,26 @@ function loadCachedMembers() {
     });
 }
 
-function updateChecklistStorage(updated) {
-  checklistData = updated;
-  t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-    console.log('✅ Trello storage updated with:', updated);
-    refreshChecklistUI();
-  });
-}
-
-function addTaskToStorage(task) {
+function appendChecklistItem(task) {
   if (isSaving) return;
   isSaving = true;
   setTimeout(() => { isSaving = false }, 1000);
 
   t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
-    updateChecklistStorage(updated);
+    checklistData = updated;
+
+    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+      console.log('✅ Task appended to Trello storage:', task);
+      refreshChecklistUI();
+    });
+  });
+}
+
+function updateChecklistStorage() {
+  t.set('card', 'shared', { taskChecklist: checklistData }).then(() => {
+    console.log('🔄 Checklist data updated in Trello storage');
+    refreshChecklistUI();
   });
 }
 
@@ -112,37 +116,38 @@ function createTaskInputRow() {
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
   dateBtn.addEventListener('click', (e) => {
-    console.log('🕑 Date picker opened for task:', nameInput.value);
+    console.log('🕑 Date picker opened');
     t.popup({
       type: 'datetime',
       title: 'Due Date',
       date: new Date(),
+      mouseEvent: e,
       callback: function(t, opts) {
         if (opts?.date) {
-          const selected = new Date(opts.date).toLocaleDateString();
+          const selected = new Date(opts.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-          task.name = nameInput.value;
-          if (task.name.trim()) addTaskToStorage(task);
+          checklistData.push(task);
+          updateChecklistStorage();
         } else {
           console.log('📅 No date selected');
         }
-      },
-      mouseEvent: e
+        t.closePopup();
+      }
     });
   });
 
   assignBtn.addEventListener('click', (e) => {
-    console.log('👤 Member picker opened for task:', nameInput.value);
+    console.log('👤 Member picker opened');
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
         if (selected?.name) {
           console.log('🙋 Member selected:', selected.name);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-          task.name = nameInput.value;
-          if (task.name.trim()) addTaskToStorage(task);
+          checklistData.push(task);
+          updateChecklistStorage();
         }
       });
   });
@@ -157,8 +162,8 @@ function createTaskInputRow() {
       console.warn('⚠️ Task name is empty — not saving');
       return;
     }
-    console.log('📦 Task being saved manually:', task);
-    addTaskToStorage(task);
+    console.log('📦 Task being saved:', task);
+    appendChecklistItem(task);
   });
 
   const cancelBtn = document.createElement('button');
