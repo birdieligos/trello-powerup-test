@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <title>Task Checklist</title>
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="https://p.trellocdn.com/power-up.min.js">
+function finalizeTask(task) {
+  checklistData.push(task);
+  saveChecklist();
+  createTaskItem(task);
+  removeAllInputRows();
+}
+</script>
   <style>
     body { font-family: sans-serif; padding: 10px; }
     .task-list { list-style: none; padding: 0; }
@@ -73,8 +80,12 @@ function loadCachedMembers() {
     });
 }
 
-function saveChecklist() {
+function saveChecklist(task) {
+  checklistData.push(task);
   t.set('card', 'shared', { taskChecklist: checklistData });
+  createTaskItem(task);
+  removeAllInputRows();
+});
 }
 
 function removeAllInputRows() {
@@ -138,13 +149,10 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value;
-    if (!task.name.trim()) return;
-    checklistData.push(task);
-    saveChecklist();
-    createTaskItem(task);
-    removeAllInputRows();
-  });
+  task.name = nameInput.value;
+  if (!task.name.trim()) return;
+  saveChecklist(task);
+});
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'cancel-btn';
