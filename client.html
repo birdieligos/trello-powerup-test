@@ -146,15 +146,12 @@ function updateChecklistField(taskId, field, value) {
 
 const assignBtn = document.createElement('button');
 assignBtn.className = 'assign-member';
-assignBtn.innerHTML = '<span>👤</span> Assign';
+assignBtn.innerHTML = `👤 ${task.memberName || 'Assign'}`;
 
 assignBtn.addEventListener('click', (e) => {
   console.log('👤 Member picker opened');
 
-  // Load cached members from board storage and open popup
-  return t.get('board', 'shared', 'cachedMembers').then((members) => {
-    console.log('[Client] Loaded cached members:', members);
-
+  t.get('board', 'shared', 'cachedMembers').then((members) => {
     return t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -163,11 +160,9 @@ assignBtn.addEventListener('click', (e) => {
       args: { members, taskId },
       callback: function (t, opts) {
         if (opts?.memberName) {
-          console.log(`[Member Picker] Selected: ${opts.memberName}`);
+          console.log(`[Member Picker] Returned: ${opts.memberName}`);
           assignBtn.innerHTML = `👤 ${opts.memberName}`;
           task.memberName = opts.memberName;
-
-          console.log(`📥 Updating checklist: taskId="${taskId}" with memberName="${opts.memberName}"`);
           updateChecklistField(taskId, 'memberName', opts.memberName);
         } else {
           console.log('🙅 No member selected from popup');
