@@ -151,8 +151,11 @@ assignBtn.innerHTML = '<span>👤</span> Assign';
 assignBtn.addEventListener('click', (e) => {
   console.log('👤 Member picker opened');
 
-  // Load cached members and open the popup
-  t.get('board', 'shared', 'cachedMembers').then((members) => {
+  const taskId = task.taskId; // ensure scoped correctly from the task object
+
+  t.get('board', 'shared', 'cachedMembers').then((members = []) => {
+    console.log('[Client] Loaded cached members:', members);
+
     return t.popup({
       title: 'Assign Member',
       url: 'member-picker.html',
@@ -162,17 +165,20 @@ assignBtn.addEventListener('click', (e) => {
       callback: function (t, opts) {
         if (opts?.memberName) {
           const name = opts.memberName;
-          console.log(`[Member Picker] Selected: ${name}`);
+          console.log(`[Client] Member selected in popup: ${name}`);
+
           assignBtn.innerHTML = `👤 ${name}`;
           task.memberName = name;
 
-          console.log(`📥 Updating checklist: taskId="${taskId}" with memberName="${name}"`);
+          console.log(`📥 Updating checklist: taskId="${taskId}", memberName="${name}"`);
           updateChecklistField(taskId, 'memberName', name);
         } else {
-          console.log('🙅 No member selected from popup');
+          console.log('[Client] No member selected in popup');
         }
       }
     });
+  }).catch(err => {
+    console.error('[Client] Failed to load cached members:', err);
   });
 });
 
