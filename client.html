@@ -73,6 +73,7 @@ function loadCachedMembers() {
 function appendChecklistItem(task) {
   if (isSaving) return;
   isSaving = true;
+  setTimeout(() => { isSaving = false }, 1000);
 
   t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
@@ -81,15 +82,7 @@ function appendChecklistItem(task) {
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
       refreshChecklistUI();
-      setTimeout(() => { isSaving = false; }, 1000); // Add 1s delay between adds
     });
-  });
-}
-
-function removeAllInputRows() {
-  document.querySelectorAll('.task-input-row').forEach(row => {
-    const li = row.closest('li');
-    if (li) li.remove();
   });
 }
 
@@ -115,7 +108,7 @@ function createTaskInputRow() {
 
   const task = { name: '', dueDate: '', memberAvatar: '' };
 
-  dateBtn.addEventListener('click', () => {
+  dateBtn.addEventListener('click', (e) => {
     console.log('🕑 Date picker opened');
     t.popup({
       type: 'datetime',
@@ -130,7 +123,8 @@ function createTaskInputRow() {
         } else {
           console.log('📅 No date selected');
         }
-      }
+      },
+      mouseEvent: e
     });
   });
 
@@ -138,14 +132,10 @@ function createTaskInputRow() {
     console.log('👤 Member picker opened');
     t.popup({ title: 'Assign Member', url: 'member-picker.html', height: 300, args: { members }, mouseEvent: e })
       .then(selected => {
-        if (selected?.avatar) {
-          console.log('🙋 Member selected:', selected.avatar);
-          task.memberAvatar = selected.avatar;
-          assignBtn.innerHTML = '';
-          const avatar = document.createElement('img');
-          avatar.src = selected.avatar;
-          avatar.className = 'member-avatar';
-          assignBtn.appendChild(avatar);
+        if (selected?.name) {
+          console.log('🙋 Member selected:', selected.name);
+          task.memberAvatar = selected.name;
+          assignBtn.innerHTML = `👤 ${selected.name}`;
         }
       });
   });
@@ -160,7 +150,6 @@ function createTaskInputRow() {
       console.warn('⚠️ Task name is empty — not saving');
       return;
     }
-    addBtn.disabled = true;
     console.log('📦 Task being saved:', task);
     appendChecklistItem(task);
   });
@@ -169,8 +158,7 @@ function createTaskInputRow() {
   cancelBtn.className = 'cancel-btn';
   cancelBtn.textContent = 'Cancel';
   cancelBtn.addEventListener('click', () => {
-    console.log('🛑 Cancel button clicked — input row will be removed');
-    removeAllInputRows();
+    li.remove();
   });
 
   inputRow.appendChild(nameInput);
@@ -197,7 +185,7 @@ function renderChecklistItem(task) {
   li.innerHTML = `
     <input type="text" class="task-name" value="${task.name || ''}" disabled />
     <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-    <button class="assign-member">${task.memberAvatar ? `<img src="${task.memberAvatar}" class="member-avatar" />` : '👤 Unassigned'}</button>
+    <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
     <button class="three-dots">⋮</button>
   `;
 
