@@ -111,7 +111,7 @@ function updateChecklistField(taskId, field, value) {
   inputRow.className = 'task-input-row';
 
   const taskId = crypto.randomUUID();
-  const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
+  const task = { taskId, name: '', dueDate: '', memberName: '' };
 
   const nameInput = document.createElement('input');
   nameInput.className = 'task-name';
@@ -163,11 +163,11 @@ assignBtn.addEventListener('click', (e) => {
         if (opts?.name) {
           console.log(`[Member Picker] Selected: ${opts.name}`);
           assignBtn.innerHTML = `👤 ${opts.name}`;
-          task.memberAvatar = opts.name;
+          task.memberName = opts.name;
 
           // Log current checklist state before update
           console.log(`📥 Member assigned, about to update taskChecklist for taskId="${taskId}"`);
-          updateChecklistField(taskId, 'memberAvatar', opts.name);
+          updateChecklistField(taskId, 'memberName', opts.name);
         } else {
           console.log('🙅 No member selected');
         }
@@ -218,7 +218,7 @@ assignBtn.addEventListener('click', (e) => {
       li.innerHTML = `
         <input type="text" class="task-name" value="${task.name || ''}" disabled />
         <button class="set-date">🕑 ${task.dueDate || 'No Date'}</button>
-        <button class="assign-member">👤 ${task.memberAvatar || 'Unassigned'}</button>
+        <button class="assign-member">👤 ${task.memberName || 'Unassigned'}</button>
         <button class="three-dots">⋮</button>
       `;
       taskList.appendChild(li);
