@@ -58,11 +58,6 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
-let checklistData = [];
-
-function saveChecklist() {
-  t.set('card', 'shared', { taskChecklist: checklistData });
-}
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -125,12 +120,13 @@ function createTaskInputRow() {
   addBtn.className = 'add-btn';
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
-    task.name = nameInput.value;
-    checklistData.push(task);
-    saveChecklist();
-    console.log('📝 Task added and saved:', task);
+    console.log('📝 Task added (UI only):', {
+      name: nameInput.value,
+      dueDate: task.dueDate,
+      memberAvatar: task.memberAvatar
+    });
     li.remove();
-    createTaskItem(task);
+    createTaskItem({ ...task, name: nameInput.value });
   });
 
   const cancelBtn = document.createElement('button');
@@ -165,13 +161,16 @@ function createTaskItem(task) {
 
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-let initialized = false;
-
 t.render(() => {
-  if (!initialized) {
-    loadCachedMembers();
+  loadCachedMembers();
+  createTaskInputRow();
+});
+
+// ✅ Listen for messages from index.html (Add Task action)
+window.addEventListener('message', (event) => {
+  if (event?.data?.type === 'add-task-inline') {
+    console.log('📥 Received message to add task inline');
     createTaskInputRow();
-    initialized = true;
   }
 });
 </script>
