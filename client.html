@@ -58,6 +58,11 @@
 <script>
 const t = TrelloPowerUp.iframe();
 let members = [];
+let checklistData = [];
+
+function saveChecklist() {
+  t.set('card', 'shared', { taskChecklist: checklistData });
+}
 
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
@@ -71,21 +76,6 @@ function loadCachedMembers() {
     })
     .catch(err => {
       console.error('❌ Failed to get cached members:', err);
-    });
-}
-
-function saveTaskToChecklist(newTask) {
-  t.get('card', 'shared', 'taskChecklist')
-    .then(existing => Array.isArray(existing) ? existing : [])
-    .then(checklist => {
-      checklist.push(newTask);
-      return t.set('card', 'shared', { taskChecklist: checklist });
-    })
-    .then(() => {
-      console.log('✅ Task saved:', newTask);
-    })
-    .catch(err => {
-      console.error('❌ Failed to save task:', err);
     });
 }
 
@@ -136,9 +126,10 @@ function createTaskInputRow() {
   addBtn.textContent = 'Add';
   addBtn.addEventListener('click', () => {
     task.name = nameInput.value;
+    checklistData.push(task);
+    saveChecklist();
     li.remove();
     createTaskItem(task);
-    saveTaskToChecklist(task);
   });
 
   const cancelBtn = document.createElement('button');
@@ -171,16 +162,22 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
+function restoreChecklist() {
+  t.get('card', 'shared', 'taskChecklist')
+    .then(stored => {
+      if (Array.isArray(stored)) {
+        checklistData = stored;
+        stored.forEach(task => createTaskItem(task));
+      }
+    })
+    .catch(err => console.error('❌ Failed to restore checklist:', err));
+}
+
 document.getElementById('add-task').addEventListener('click', createTaskInputRow);
 
-let initialized = false;
-
 t.render(() => {
-  if (!initialized) {
-    loadCachedMembers();
-    createTaskInputRow();
-    initialized = true;
-  }
+  loadCachedMembers();
+  restoreChecklist();
 });
 </script>
 </body>
