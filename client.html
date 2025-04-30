@@ -47,6 +47,7 @@
   </style>
 </head>
 <body>
+
 <ul id="task-list" class="task-list"></ul>
 <button id="add-task" class="add-task-btn">+ Add New Task</button>
 
@@ -59,8 +60,25 @@ let isSaving = false;
 function loadCachedMembers() {
   t.get('board', 'shared', 'cachedMembers')
     .then(cached => {
-      if (Array.isArray(cached)) members = cached;
+      if (Array.isArray(cached)) {
+        members = cached;
+      }
     });
+}
+
+function updateChecklistField(taskId, field, value) {
+  t.get('card', 'shared', 'taskChecklist').then(existing => {
+    const updated = Array.isArray(existing) ? existing.map(item => {
+      if (item.taskId === taskId) {
+        return { ...item, [field]: value };
+      }
+      return item;
+    }) : [];
+    t.set('card', 'shared', { taskChecklist: updated }).then(() => {
+      console.log(`✅ Task ${field} updated to Trello storage for taskId=${taskId}`);
+      setTimeout(() => t.closePopup(), 300);
+    });
+  });
 }
 
 function appendChecklistItem(task) {
@@ -71,6 +89,7 @@ function appendChecklistItem(task) {
   t.get('card', 'shared', 'taskChecklist').then(existing => {
     const updated = Array.isArray(existing) ? [...existing, task] : [task];
     checklistData = updated;
+
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
       refreshChecklistUI();
@@ -86,6 +105,9 @@ function createTaskInputRow() {
   const inputRow = document.createElement('div');
   inputRow.className = 'task-input-row';
 
+  const taskId = crypto.randomUUID();
+  const task = { taskId, name: '', dueDate: '', memberAvatar: '' };
+
   const nameInput = document.createElement('input');
   nameInput.className = 'task-name';
   nameInput.placeholder = 'Task name...';
@@ -93,13 +115,6 @@ function createTaskInputRow() {
   const dateBtn = document.createElement('button');
   dateBtn.className = 'set-date';
   dateBtn.innerHTML = '<span>🕑</span> Set Date';
-
-  const assignBtn = document.createElement('button');
-  assignBtn.className = 'assign-member';
-  assignBtn.innerHTML = '<span>👤</span> Assign';
-
-  const task = { name: '', dueDate: '', memberAvatar: '' };
-
   dateBtn.addEventListener('click', (e) => {
     console.log('🕑 Date picker opened');
     t.popup({
@@ -113,14 +128,7 @@ function createTaskInputRow() {
           console.log('📅 Date selected:', selected);
           task.dueDate = selected;
           dateBtn.innerHTML = `🕑 ${selected}`;
-          t.get('card', 'shared', 'taskChecklist').then(existing => {
-            const updated = Array.isArray(existing) ? [...existing] : [];
-            updated.push({ ...task });
-            t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-              console.log('✅ Due date saved to Trello storage:', updated);
-              t.closePopup();
-            });
-          });
+          updateChecklistField(task.taskId, 'dueDate', selected);
         } else {
           console.log('📅 No date selected');
         }
@@ -128,6 +136,9 @@ function createTaskInputRow() {
     });
   });
 
+  const assignBtn = document.createElement('button');
+  assignBtn.className = 'assign-member';
+  assignBtn.innerHTML = '<span>👤</span> Assign';
   assignBtn.addEventListener('click', (e) => {
     console.log('👤 Member picker opened');
     t.popup({
@@ -141,14 +152,7 @@ function createTaskInputRow() {
           console.log(`[Member Picker] Selected: ${selected.name}`);
           task.memberAvatar = selected.name;
           assignBtn.innerHTML = `👤 ${selected.name}`;
-          t.get('card', 'shared', 'taskChecklist').then(existing => {
-            const updated = Array.isArray(existing) ? [...existing] : [];
-            updated.push({ ...task });
-            t.set('card', 'shared', { taskChecklist: updated }).then(() => {
-              console.log('✅ Member assignment saved to Trello storage:', updated);
-              t.closePopup();
-            });
-          });
+          updateChecklistField(task.taskId, 'memberAvatar', selected.name);
         } else {
           console.log('🙅 No member selected');
         }
