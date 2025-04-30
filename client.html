@@ -129,7 +129,7 @@ function createTaskInputRow() {
     if (!task.name.trim()) return;
     checklistData.push(task);
     saveChecklist();
-    createTaskItem(task); // only create this new item
+    createTaskItem(task);
     li.remove();
   });
 
@@ -163,18 +163,20 @@ function createTaskItem(task) {
   taskList.appendChild(li);
 }
 
-t.render(() => {
-  loadCachedMembers();
-  t.get('card', 'shared', 'taskChecklist')
-    .then(saved => {
-      if (Array.isArray(saved)) {
-        checklistData = saved;
-        saved.forEach(createTaskItem);
-      }
-    });
-});
+document.addEventListener('DOMContentLoaded', () => {
+  t.render(() => {
+    loadCachedMembers();
+    t.get('card', 'shared', 'taskChecklist')
+      .then(saved => {
+        if (Array.isArray(saved)) {
+          checklistData = saved;
+          saved.forEach(createTaskItem);
+        }
+      });
+  });
 
-document.getElementById('add-task').addEventListener('click', createTaskInputRow);
+  document.getElementById('add-task').addEventListener('click', createTaskInputRow);
+});
 </script>
 </body>
 </html>
