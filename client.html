@@ -84,8 +84,7 @@ function appendChecklistItem(task) {
 
     t.set('card', 'shared', { taskChecklist: updated }).then(() => {
       console.log('✅ Task appended to Trello storage:', task);
-      renderChecklistItem(task);
-      removeAllInputRows();
+      refreshChecklistUI();
       isSaving = false;
     });
   });
@@ -187,6 +186,12 @@ function createTaskInputRow() {
   document.getElementById('add-task').disabled = true;
 }
 
+function refreshChecklistUI() {
+  const taskList = document.getElementById('task-list');
+  taskList.innerHTML = '';
+  checklistData.forEach(renderChecklistItem);
+}
+
 function renderChecklistItem(task) {
   const taskList = document.getElementById('task-list');
   const li = document.createElement('li');
@@ -210,7 +215,7 @@ t.render(() => {
   t.get('card', 'shared', 'taskChecklist')
     .then(saved => {
       if (Array.isArray(saved)) {
-      console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
+        console.log(`✅ Loaded ${saved.length} saved task(s) from storage`);
         checklistData = saved;
         saved.forEach(renderChecklistItem);
       }
